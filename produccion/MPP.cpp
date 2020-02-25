@@ -16,7 +16,66 @@ long long maxThreshold;
 MPP_Problem::MPP_Problem(){
 
 }
+void MPP_Problem::load_data(int argc, char **argv)
+{
+    if(argc < 6)
+    {
+	 cout << "There is not enough input arguments...." <<endl;
+	 exit(EXIT_FAILURE);
+    }
+    String Plates_file(argv[1]), Constraints_file(argv[2]);//, Best_configuration_file(argv[5]);
+    int nDias = atoi(argv[3]);
 
+    ////reading the information.......
+    load_constraints(); 
+    load_plates(Plates_file);
+
+}
+void MPP_Problem::load_constraints(string Plates_file)
+{
+   	ifstream ifs;
+	struct infoPlates plate;
+	ifs.open(c_filename, ifstream::in);
+	if (ifs.is_open())
+	{
+	   string line, word;
+	   getline(ifs, line);
+	   stringsteram line_commas(line);
+	   vector<String> column_names;
+	//Here is assumed that the first two columns are of the "DESCRIPCION" and "TIEMPO" respectively, thereafter are the meta-data and the last two columns are "CATEGORIA" and "FAVORITO" respectively.
+	   while(getline(line_commas ,word, ",")) //first getting the tag-information of each column....
+	   column_names.push_back(word);
+	  
+	   while (ifs.good())
+	   {
+	       string cell;
+	       getline(ifs, cell, ',');
+               plate.description = stoi(cell);
+	       getline(ifs, cell, ',');
+               plate.time_day = cell;
+               for(int i = 0; i < column_names.size()-4; i++)
+               {
+	          getline(ifs, cell, ',');
+		  plate.nutriment_info.push_back(stod(cell));
+               }
+	       getline(ifs, cell, ',');
+	       plate.category = stoi(cell);
+	       getline(ifs, cell, ',');
+               plate.favorite = (bool)atoi(cell);
+	       v_plates.push_back(plate);
+	    }
+		ifs.close();
+	} else {
+		cout << "\n\nError. No se han podido leer los archivos de platos.";
+		cin.get();
+		exit(EXIT_FAILURE);
+	}
+
+}
+void MPP_Problem::load_plates(String Constraints_file)
+{
+
+}
 void MPP::calculateFeasibilityDegree(){
 	valorFac = 0;
 	double infoNPlan[num_nutr];

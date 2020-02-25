@@ -9,25 +9,26 @@ extern volatile bool finished;
 
 void printBest();
 
-struct infoPlatos {
-	string nombre;				  //Nombre del plato
-	float precio;           //Precio del plato
-	float cantidad;					//Cantidad en gramos
-	vector<float> infoN;    //Informacion nutricional del plato
-	vector<string> alg;     //Alergenos del plato
-	vector<string> inc;     //Incompatibilidades alimenticias del plato
-	vector<int> gruposAl;
+struct infoPlates {
+        int description;	
+	string time_day; //time related with the plate
+	vector<double> nutrient_info;    //nutriments meta-data...
+	int category; //category, at this point is 1 or 2
+	bool favorite; //true if this is a favorite plate...
 };
 
 class MPP_Problem{
 	public:
 		MPP_Problem();
+		MPP_Problem("");
 		~MPP_Problem(){
-		
 		}
-		vector<infoPlatos> v_primerosPlatos;
-		vector<infoPlatos> v_segundosPlatos;
-		vector<infoPlatos> v_postres;
+ 		void load_data();
+		void load_constraints(string Plates_file);
+		void load_plates(String Constraints_file);
+
+		vector<int> v_breakfast, v_morning_snack, v_starter, v_main_course, v_evening_snack, v_dinner, v_both_snack;
+		vector<infoPlates> v_plates;
 		int nDias;
 
 };
