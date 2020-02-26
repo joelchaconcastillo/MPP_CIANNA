@@ -27,7 +27,7 @@ void MA::initPopulation(){
 	for (int i = 0; i < N; i++){
 		//cout << "Crea ind " << i << endl;
 		ExtendedIndividual *ei = new ExtendedIndividual();
-		ei->ind.restart();
+		ei->ind.init();
 		population.push_back(ei);	
 	}
 }

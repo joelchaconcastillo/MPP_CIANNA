@@ -3,6 +3,25 @@
 #include "utils.h"
 using namespace std;
 
+const string WHITESPACE = " \n\r\t\f\v";
+
+string ltrim(const string& s)
+{
+	size_t start = s.find_first_not_of(WHITESPACE);
+	return (start == std::string::npos) ? "" : s.substr(start);
+}
+
+string rtrim(const string& s)
+{
+	size_t end = s.find_last_not_of(WHITESPACE);
+	return (end == std::string::npos) ? "" : s.substr(0, end + 1);
+}
+
+string trim(const string& s)
+{
+	return rtrim(ltrim(s));
+}
+
 int currentTol;
 long long Globalbest = 1e16;
 MPP bestI;
@@ -16,6 +35,7 @@ long long maxThreshold;
 MPP_Problem::MPP_Problem(){
 
 }
+
 void MPP_Problem::load_data(int argc, char **argv)
 {
     if(argc < 6)
@@ -25,14 +45,15 @@ void MPP_Problem::load_data(int argc, char **argv)
     }
     this->nDias = atoi(argv[3]);
     ////reading the information.......
+    v_times_dishes.resize(N_TIMES_DAY); //N_times_dishes...
     load_constraints(argv[2]); 
-    load_plates(argv[1]);
-
+    load_dishes(argv[1]);
 }
-void MPP_Problem::load_plates(char *c_filename)
+void MPP_Problem::load_dishes(char *c_filename)
 {
+
    	ifstream ifs;
-	struct infoPlates str_plate;
+	struct infoPlates str_dish;
 	ifs.open(c_filename, ifstream::in);
 	if (ifs.is_open())
 	{
@@ -43,36 +64,37 @@ void MPP_Problem::load_plates(char *c_filename)
 	//Here is assumed that the first two columns are of the "DESCRIPCION" and "TIEMPO" respectively, thereafter are the meta-data and the last two columns are "CATEGORIA" and "FAVORITO" respectively.
 	   while(getline(line_commas ,word, ',')) //first getting the tag-information of each column....
 	   column_names.push_back(word);
-	  
 	   while (ifs.good())
 	   {
 	       string cell;
 	       getline(ifs, cell, ',');
-               str_plate.description = stoi(cell);
+	       if(trim(cell).empty()) break; //The file has an extra empty line
+               str_dish.description = stoi(cell);
 	       getline(ifs, cell, ',');
-               str_plate.time_day = cell;
+               str_dish.time_day = trim(cell);
                for(int i = 0; i < column_names.size()-4; i++)
                {
 	          getline(ifs, cell, ',');
-		  str_plate.v_nutrient_value.push_back(stod(cell));
+		  str_dish.v_nutrient_value.push_back(stod(cell));
                }
 	       getline(ifs, cell, ',');
-	       str_plate.category = stoi(cell);
-	       getline(ifs, cell, ',');
-               str_plate.favorite = (bool)stoi(cell);
-	       if(str_plate.time_day == "DESAYUNO") v_breakfast.push_back(v_plates.size());
-	       else if(str_plate.time_day == "COLACION_MATUTINA") v_morning_snack.push_back(v_plates.size());
-	       else if(str_plate.time_day == "COMIDA_ENTRADA") v_starter.push_back(v_plates.size());
-	       else if(str_plate.time_day == "COMIDA_PRINCIPAL") v_main_course.push_back(v_plates.size());
-	       else if(str_plate.time_day == "COLACION_VESPERTINA") v_evening_snack.push_back(v_plates.size());
-	       else if(str_plate.time_day == "CENA") v_dinner.push_back(v_plates.size());
-	       else if(str_plate.time_day == "COLACION_AMBAS") v_both_snack.push_back(v_plates.size());
+	       str_dish.category = stoi(cell);
+	       getline(ifs, cell, '\n');
+               str_dish.favorite = (bool)stoi(cell);
+		
+	       if(str_dish.time_day == "DESAYUNO") v_times_dishes[BREAKFAST].push_back(v_dishes.size());
+	       else if(str_dish.time_day == "COLACION_MATUTINA") v_times_dishes[MORNING_SNACK].push_back(v_dishes.size());
+	       else if(str_dish.time_day == "COMIDA_ENTRADA") v_times_dishes[STARTER].push_back(v_dishes.size());
+	       else if(str_dish.time_day == "COMIDA_PRINCIPAL") v_times_dishes[MAIN_COURSE].push_back(v_dishes.size());
+	       else if(str_dish.time_day == "COLACION_VESPERTINA") v_times_dishes[EVENING_SNACK].push_back(v_dishes.size());
+	       else if(str_dish.time_day == "CENA") v_times_dishes[DINNER].push_back(v_dishes.size());
+	       else if(str_dish.time_day == "COLACION_AMBAS") v_times_dishes[BOTH_SNACK].push_back(v_dishes.size());
 	       else
 		{
 		   cout <<"Tiempo del día no desconocido"<<endl;
 		   exit(EXIT_FAILURE);
 		}
-	       v_plates.push_back(str_plate);
+	       v_dishes.push_back(str_dish);
 	    }
 		ifs.close();
 	} else {
@@ -94,21 +116,23 @@ void MPP_Problem::load_constraints(char *c_filename)
 	   vector<string> column_names;
 	   while(getline(line_commas ,word, ',')) //first getting the tag-information of each column....
 	   column_names.push_back(word);
-	  
 	   while (ifs.good())
 	   {
 	       string cell;
 	       getline(ifs, cell, ',');
-               str_constraint_nutrient.type = cell;
+	       if(trim(cell).empty()) break; //The file has an extra empty line
+               str_constraint_nutrient.type = trim(cell);
 	       getline(ifs, cell, ',');
-	       str_constraint_nutrient.name = cell;
+	       str_constraint_nutrient.name = trim(cell);
 	       getline(ifs, cell, ',');
 	       str_constraint_nutrient.min = stod(cell);
-	       getline(ifs, cell, ',');
-               str_constraint_nutrient.max = stoi(cell);
+	       getline(ifs, cell, '\n'); //last word...
+               str_constraint_nutrient.max = stod(cell);
+
 	       if( str_constraint_nutrient.type == "GLOBAL") v_constraint_global.push_back((int)v_constraints.size());
 	       else if( str_constraint_nutrient.type == "DIA") v_constraint_day.push_back((int)v_constraints.size());
 	       else{
+	   cout << str_constraint_nutrient.type<<endl;
 		   cout << "Se desconoce un tipo de restricci\'on, \'unicamente puede ser por d\'ia o global"<<endl;
 		   exit(EXIT_FAILURE);
 		}
@@ -193,37 +217,23 @@ void MPP::evaluate(){
 //	return newInd;
 //}
 
-bool MPP::init(const vector<string> &params){//Dias Cruce
-//	if (params.size() != 2) { cerr << "Error parametros de MPP incorrectos" << endl; return false;}
-//	nDias = atoi(params[0].c_str());
-//	string crossover = params[1];
-//	if (crossover == "Uniform"){
-//		crossoverType = UNIFORM_CROSSOVER;
-//	} else if (crossover == "PairBasedCrossover"){
-//		crossoverType = PAIR_BASED_CROSSOVER;
-//	} else if (crossover == "Uniform2"){
-//		crossoverType = UNIFORM2_CROSSOVER;
-//	} else {
-//		cerr << "Error en la especificacion del crossover" << endl;
-//		return false;
-//	}
-//	setNumberOfVar(nDias * 3);
-//	setNumberOfObj(1);
-//	set_VectoresPlatos("/home/carlos.segura/svn/oplink/algorithms/team/src/plugins/problems/MPP/instancias/postres.txt", v_postres);
-//	set_VectoresPlatos("/home/carlos.segura/svn/oplink/algorithms/team/src/plugins/problems/MPP/instancias/primerosplatos.txt", v_primerosPlatos); 
-//	set_VectoresPlatos("/home/carlos.segura/svn/oplink/algorithms/team/src/plugins/problems/MPP/instancias/segundosplatos.txt", v_segundosPlatos);
-	return true;
+void MPP::init(){
+   x_var.resize(N_TIMES_DAY*MPP_problem->nDias);
+   for (int i = 0; i < MPP_problem->nDias; i++){
+	for (int j = 0; j < N_TIMES_DAY; j++){
+            x_var[i*N_TIMES_DAY+j] = rand()%(int)MPP_problem->v_times_dishes[j].size();
+	   }
+	}
 }
 
 void MPP::restart(){
-//	cout << "Llama a inicializar" << endl;
-//	for (int i = 0; i < nDias; i++){
-//		for (int j = 0; j < 3; j++){
-//			setVar(i * 3 + j, random() % NPLATOS[j]);
-//		}
-//	}
-//	evaluate();
-//	localSearch();
+	for (int i = 0; i < MPP_problem->nDias; i++){
+		for (int j = 0; j < N_TIMES_DAY; j++){
+		        x_var[i*N_TIMES_DAY+j] = rand()%(int)MPP_problem->v_times_dishes[j].size();
+		}
+	}
+	evaluate();
+	localSearch();
 }
 
 //struct Food {

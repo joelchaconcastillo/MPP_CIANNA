@@ -1,0 +1,10 @@
+DESCRIPCION , TIEMPO , CALORIAS , HIDRATOS , PROTEINAS , LIPIDOS , EQFRUTAS , EQVERDURAS , EQCEREALESCONGRASAS , EQCEREALESSINGRASAS , EQLEGUMINOSAS , EQORIGENANIMALMUYBAJO , EQORIGENANIMALBAJO , EQORIGENANIMALMODERADO , EQORIGENALTO , EQLACTEOS , EQGRASASCONPROTEINAS , EQGRASASSINPROTEINAS , EQAZUCARES , CALCIO , HIERRO , ZINC , MAGNESIO , YODO , SODIO , FIBRA , POTASIO , CATEGORIA , FAVORITO
+1 , DESAYUNO , 500 , 20 , 10 , 5 , 1 , 0 , 0 , 0 , 0 , 2 , 0 , 0 , 0 , 1 , 0 , 0 , 0 , 10 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 0
+2 , COLACION_MATUTINA , 50 , 0 , 0 , 0 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 0
+3 , COMIDA_ENTRADA , 100 , 0 , 0 , 0 , 0 , 2 , 0 , 0 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 0 , 0 , 1 , 0 , 1 , 0
+4 , COMIDA_PRINCIPAL , 750 , 0 , 20 , 0 , 0 , 0 , 0 , 0 , 2 , 10 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 0
+5 , COMIDA_ENTRADA , 100 , 0 , 0 , 0 , 0 , 2 , 0 , 0 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 0 , 0 , 1 , 0 , 2 , 0
+6 , COMIDA_PRINCIPAL , 750 , 0 , 20 , 0 , 0 , 0 , 0 , 0 , 2 , 10 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 2 , 0
+7 , COLACION_VESPERTINA , 100 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 0
+8 , CENA , 300 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 0
+9 , COLACION_AMBAS , 150 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 0
