@@ -8,7 +8,7 @@
 using namespace std;
 
 void printer(int signal){
-	finished = true;
+	//finished = true;
 }
 
 MA::MA(int N_, double pc_, double pm_, double finalTime_){

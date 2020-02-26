@@ -14,8 +14,8 @@ int main(int argc, char **argv){
         STP.load_data(argc, argv);
 
         //everithinh seem's to be OK, thus starting the algorithm...
-	MA ma(N, pc, pm, finalTime);
+//	MA ma(N, pc, pm, finalTime);
 	//string file = string(argv[1]);
 //	MPP::MPP_problem = &STP;
-	ma.run(STP);
+//	ma.run(STP);
 }

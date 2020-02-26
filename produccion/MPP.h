@@ -5,48 +5,52 @@
 using namespace std;
 #define FOREACH(i, v) for (__typeof((v).begin()) i = (v).begin(); i != (v).end(); i++)
 
-extern volatile bool finished;
+//extern volatile bool finished;
 
 void printBest();
 
 struct infoPlates {
         int description;	
 	string time_day; //time related with the plate
-	vector<double> nutrient_info;    //nutriments meta-data...
+	vector<double> v_nutrient_value;    //nutriments meta-data...
 	int category; //category, at this point is 1 or 2
 	bool favorite; //true if this is a favorite plate...
+};
+struct constraint_nutrient
+{
+   double min, max;
+   string type, name;
 };
 
 class MPP_Problem{
 	public:
 		MPP_Problem();
-		MPP_Problem("");
 		~MPP_Problem(){
 		}
- 		void load_data();
-		void load_constraints(string Plates_file);
-		void load_plates(String Constraints_file);
+ 		void load_data(int argc, char **argv);
+		void load_constraints(char *Plates_file);
+		void load_plates(char *Constraints_file);
 
-		vector<int> v_breakfast, v_morning_snack, v_starter, v_main_course, v_evening_snack, v_dinner, v_both_snack;
 		vector<infoPlates> v_plates;
+		vector<int> v_breakfast, v_morning_snack, v_starter, v_main_course, v_evening_snack, v_dinner, v_both_snack;
+		vector<constraint_nutrient> v_constraints;
+		vector<int> v_constraint_global, v_constraint_day;
+		
 		int nDias;
 
 };
-
 class MPP{
 	public:
 		MPP(){
-		
 		}
 		~MPP(){
 		
 		}
 
 //////menu planning
-		MPP();
 		void evaluate();
 		void restart();
-		Individual *clone() const;
+		//Individual *clone() const;
 		bool init (const vector<string> &params);
 		void dependentMutation(double pm);
 		void dependentCrossover(MPP &i2);
@@ -54,15 +58,15 @@ class MPP{
 		void uniform2Crossover(MPP &i2);
 		void pairBasedCrossover(MPP &i2);
 		void localSearch();
-		double getDistance(MPP &ind2); 
+		int getDistance(MPP &ind2); 
 		double inline getMaximum(const int i) const { cerr << "ErrorL llama a getMaximum" << endl; exit(-1); return 0; }
 		double inline getMinimum(const int i) const { cerr << "Error: llama a getMinimum" << endl; exit(-1); return 0; }
-		unsigned int inline getOptDirection(const int i) const { return MAXIMIZE; }
+		//unsigned int inline getOptDirection(const int i) const { return MAXIMIZE; }
 		virtual void print(ostream &os) const;
 
 //!menu planning
 
-		vector<bool> I;
+//		vector<bool> I;
 		long long fitness;
 		static MPP_Problem *MPP_problem;
 	private:
