@@ -268,21 +268,21 @@ void MPP::dependentCrossover(MPP &i2){
 
 void MPP::uniformCrossover(MPP &i2)
 {
-//	for (int i = 0; i < nDias; i++){
-//		if (rand() > (RAND_MAX / 2)){
-//			swap(var[i*3], i2->var[i*3]);
-//			swap(var[i*3+1], i2->var[i*3+1]);
-//			swap(var[i*3+2], i2->var[i*3+2]);
-//		} 
-//	}
+	for (int i = 0; i < MPP_problem->nDias; i++){
+	   if (rand() > (RAND_MAX / 2)){
+		for(int j = 0; j < N_TIMES_DAY; j++)
+			swap(x_var[i*N_TIMES_DAY + j], i2.x_var[i*N_TIMES_DAY + j]);
+	    } 
+	}
 }
 
 void MPP::uniform2Crossover(MPP &i2){
-//	for (int i = 0; i < nDias * 3; i++){
-//		if (rand() > (RAND_MAX / 2)){
-//			swap(var[i], i2->var[i]);
-//		} 
-//	}
+
+	for (int i = 0; i < (int)x_var.size(); i++){
+		if (rand() > (RAND_MAX / 2)){
+			swap(x_var[i], i2.x_var[i]);
+		} 
+	}
 }
 
 void MPP::pairBasedCrossover(MPP &i2)
