@@ -45,7 +45,7 @@ void MPP_Problem::load_data(int argc, char **argv)
     }
     this->nDias = atoi(argv[3]);
     ////reading the information.......
-    v_times_dishes.resize(N_TIMES_DAY); //N_times_dishes...
+    v_times_dishes.resize(N_FOODS_DAY); //N_times_dishes...
     load_constraints(argv[2]); 
     load_dishes(argv[1]);
 }
@@ -220,9 +220,9 @@ void MPP::evaluate(){
     //fitness by day...    
     for(int i = 0 ; i < MPP_problem->nDias; i++)
     {
-       if(MPP_problem->v_dishes[x_var[i*N_TIMES_DAY + idx_STARTER_1]].category != MPP_problem->v_dishes[x_var[i*N_TIMES_DAY + idx_STARTER_2]].category) day_fitness++;
-       if(MPP_problem->v_dishes[x_var[i*N_TIMES_DAY + idx_MAIN_COURSE_1]].category != MPP_problem->v_dishes[x_var[i*N_TIMES_DAY + idx_MAIN_COURSE_2]].category) day_fitness++;
-       if(MPP_problem->v_dishes[x_var[i*N_TIMES_DAY + idx_MORNING_SNACK]].category != MPP_problem->v_dishes[x_var[i*N_TIMES_DAY + idx_EVENING_SNACK]].category) day_fitness++;
+       if(MPP_problem->v_dishes[x_var[i*N_OPT_DAY+ idx_STARTER_1]].category != MPP_problem->v_dishes[x_var[i*N_OPT_DAY+ idx_STARTER_2]].category) day_fitness++;
+       if(MPP_problem->v_dishes[x_var[i*N_OPT_DAY+ idx_MAIN_COURSE_1]].category != MPP_problem->v_dishes[x_var[i*N_OPT_DAY+ idx_MAIN_COURSE_2]].category) day_fitness++;
+       if(MPP_problem->v_dishes[x_var[i*N_OPT_DAY+ idx_MORNING_SNACK]].category != MPP_problem->v_dishes[x_var[i*N_OPT_DAY+ idx_EVENING_SNACK]].category) day_fitness++;
     }
    //global fitness is taking into consideration the shannon entropy..
    for(int i = 0; i < MPP_problem->nDias; i++)
@@ -232,17 +232,17 @@ void MPP::evaluate(){
   fitness = day_fitness + global_fitness; 
 }
 void MPP::init(){
-   x_var.resize(N_TIMES_DAY*MPP_problem->nDias);
+   x_var.resize(N_OPT_DAY*MPP_problem->nDias);
    for (int i = 0; i < MPP_problem->nDias; i++){
-	for (int j = 0; j < N_TIMES_DAY; j++){
-            x_var[i*N_TIMES_DAY+j] = rand()%(int)MPP_problem->v_times_dishes[j].size();
+	for (int j = 0; j < N_OPT_DAY; j++){
+            x_var[i*N_OPT_DAY+j] = rand()%(int)MPP_problem->v_times_dishes[j].size();
 	   }
 	}
 }
 void MPP::restart(){
 	for (int i = 0; i < MPP_problem->nDias; i++){
-		for (int j = 0; j < N_TIMES_DAY; j++){
-		        x_var[i*N_TIMES_DAY+j] = rand()%(int)MPP_problem->v_times_dishes[j].size();
+		for (int j = 0; j < N_OPT_DAY; j++){
+		        x_var[i*N_OPT_DAY+j] = rand()%(int)MPP_problem->v_times_dishes[j].size();
 		}
 	}
 	evaluate();
@@ -257,21 +257,25 @@ void MPP::restart(){
 //}; 
 
 void MPP::dependentCrossover(MPP &i2){
-//	if (crossoverType == PAIR_BASED_CROSSOVER){
-//		pairBasedCrossover(i2);
-//	} else if (crossoverType == UNIFORM_CROSSOVER){
-//		uniformCrossover(i2);
-//	} else if (crossoverType == UNIFORM2_CROSSOVER){
-//		uniform2Crossover(i2);
-//	}
+	if (crossoverType == PAIR_BASED_CROSSOVER){
+		pairBasedCrossover(i2);
+	} else if (crossoverType == UNIFORM_CROSSOVER){
+		uniformCrossover(i2);
+	} else if (crossoverType == UNIFORM2_CROSSOVER){
+		uniform2Crossover(i2);
+	}
+	else
+	{
+	   cout << "Operador de cruce desconocido "<<endl;
+	   exit(EXIT_FAILURE);
+	}
 }
-
 void MPP::uniformCrossover(MPP &i2)
 {
 	for (int i = 0; i < MPP_problem->nDias; i++){
 	   if (rand() > (RAND_MAX / 2)){
-		for(int j = 0; j < N_TIMES_DAY; j++)
-			swap(x_var[i*N_TIMES_DAY + j], i2.x_var[i*N_TIMES_DAY + j]);
+		for(int j = 0; j < N_OPT_DAY; j++)
+			swap(x_var[i*N_OPT_DAY+ j], i2.x_var[i*N_OPT_DAY + j]);
 	    } 
 	}
 }
@@ -436,7 +440,22 @@ void MPP::localSearch( ) {
 
 */
 int MPP::getDistance(MPP &ind2) {
-return 0.0;
+   
+  multiset<set<int>> conf1, conf2;
+ for(int i = 0; i < MPP_problem->nDias; i++)
+ {
+    set<int> sA, sB;
+    for(int j = 0; j < N_OPT_DAY; j++)
+    {
+	sA.insert(x_var[i*N_OPT_DAY + j]);
+	sB.insert(x_var[i*N_OPT_DAY + j]);
+    }
+    conf1.insert(sA);
+    conf2.insert(sB);
+ }
+ vector<set<int> > intersection;
+ set_intersection(conf1.begin(), conf1.end(), conf2.begin(), conf2.end(), std::inserter(intersection, intersection.begin()));
+ return MPP_problem->nDias - (int)intersection.size();
 //	map<Food, int> f1;
 //	int dist = 0;
 //	for (int i = 0; i < nDias; i++){
@@ -464,12 +483,11 @@ return 0.0;
 }
 
 void MPP::print(ostream &os) const {
-//	for (int i = 0; i < var.size(); i++){
-//		os << (int)round(var[i]) << " ";
-//	}
+	for (int i = 0; i < x_var.size(); i++){
+		os << x_var[i] << " ";
+	}
+	os << fitness <<endl;
 //	os << valorFac << " " << precioObj << endl;
 }
-
-long long fitnessBest = 1e15;
 
 

@@ -10,9 +10,8 @@ using namespace std;
 #define CATEGORY_2 2
 #define CATEGORY_BOTH 0
 
-#define N_TIMES_DAY 6
-//the times indexes should start with zero
-#define idx_BREAKFAST 0 
+//encoded times by each day of the individual
+#define N_OPT_DAY 8
 #define idx_MORNING_SNACK 1
 #define idx_STARTER_1 2
 #define idx_STARTER_2 2
@@ -21,7 +20,8 @@ using namespace std;
 #define idx_EVENING_SNACK 6
 #define idx_DINNER 7
 
-
+#define N_FOODS_DAY 6
+//Options of the v_times_dishes..
 #define BREAKFAST 0 
 #define MORNING_SNACK 1
 #define STARTER 2
@@ -30,8 +30,13 @@ using namespace std;
 #define DINNER 5
 
 //#define BOTH_SNACK 8
+////////crossover type......
+#define PAIR_BASED_CROSSOVER 1
+#define UNIFORM_CROSSOVER 2
+#define UNIFORM2_CROSSOVER 3
 
 //extern volatile bool finished;
+extern int crossoverType;
 void printBest();
 struct infoPlates {
         int description;	
@@ -56,7 +61,7 @@ class MPP_Problem{
 		void load_dishes(char *Constraints_file);
 
 		vector<infoPlates> v_dishes;
-		vector<vector<int> > v_times_dishes;  //vector<int> v_breakfast, v_morning_snack, v_starter, v_main_course, v_evening_snack, v_dinner, v_both_snack;
+		vector<vector<int> > v_times_dishes;  // the same as ->  vector<int> v_breakfast, v_morning_snack, v_starter, v_main_course, v_evening_snack, v_dinner;
 		vector<constraint_nutrient> v_constraints;
 		vector<int> v_constraint_global, v_constraint_day;
 		int nDias;
@@ -87,10 +92,10 @@ class MPP{
 
 //!menu planning
 
-//		vector<bool> I;
 		vector<int> x_var;
 		double fitness;
 		static MPP_Problem *MPP_problem;
+
 	private:
 		void calculateFeasibilityDegree();
 		//int heaviestNut, heaviestType;

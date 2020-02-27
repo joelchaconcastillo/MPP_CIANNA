@@ -1,13 +1,11 @@
 #ifndef __MA_H__
 #define __MA_H__
-
 #include "MPP.h"
 
 struct ExtendedIndividual {
 	MPP ind;
 	int dist;
 };
-
 class MA {
 	public:
 		MA(int N_, double pc_, double pm_, double finalTime_);
