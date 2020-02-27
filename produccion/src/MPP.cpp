@@ -88,12 +88,24 @@ void MPP_Problem::load_dishes(char *c_filename)
 	       else if(str_dish.time_day == "COMIDA_PRINCIPAL") v_times_dishes[MAIN_COURSE].push_back(v_dishes.size());
 	       else if(str_dish.time_day == "COLACION_VESPERTINA") v_times_dishes[EVENING_SNACK].push_back(v_dishes.size());
 	       else if(str_dish.time_day == "CENA") v_times_dishes[DINNER].push_back(v_dishes.size());
-	       else if(str_dish.time_day == "COLACION_AMBAS") v_times_dishes[BOTH_SNACK].push_back(v_dishes.size());
+	       else if(str_dish.time_day == "COLACION_AMBAS")
+	       {
+ 		 v_times_dishes[MORNING_SNACK].push_back(v_dishes.size());
+ 		 v_times_dishes[EVENING_SNACK].push_back(v_dishes.size());
+	       }
 	       else
 		{
 		   cout <<"Tiempo del día no desconocido"<<endl;
 		   exit(EXIT_FAILURE);
 		}
+	      if( str_dish.category == CATEGORY_BOTH)
+	      {
+		str_dish.category = CATEGORY_1;
+	       v_dishes.push_back(str_dish);
+		str_dish.category = CATEGORY_2;
+	       v_dishes.push_back(str_dish);
+	      }
+	      else
 	       v_dishes.push_back(str_dish);
 	    }
 		ifs.close();
@@ -196,27 +208,29 @@ void MPP::calculateFeasibilityDegree(){
 ///		}
 ///	}
 }
-
+/*
+ The objective is defined as follows:
+  max f(x) + g(y)
+  where 
+     x is the varaibility by day 
+     y is the global variability 
+*/
 void MPP::evaluate(){
-//	precioObj = 0;
-//	for(int i = 0; i < nDias; i++){
-//		int x = i*num_tipoPlato;
-//		precioObj += v_primerosPlatos[round(getVar(x))].precio + v_segundosPlatos[round(getVar(x+1))].precio + v_postres[round(getVar(x+2))].precio;
-//	}
-//	calculateFeasibilityDegree();
-//	setObj(0, 1.0 / (valorFac * 1e12 + precioObj));
+    double day_fitness = 0.0, global_fitness = 0.0;
+    //fitness by day...    
+    for(int i = 0 ; i < MPP_problem->nDias; i++)
+    {
+       if(MPP_problem->v_dishes[x_var[i*N_TIMES_DAY + idx_STARTER_1]].category != MPP_problem->v_dishes[x_var[i*N_TIMES_DAY + idx_STARTER_2]].category) day_fitness++;
+       if(MPP_problem->v_dishes[x_var[i*N_TIMES_DAY + idx_MAIN_COURSE_1]].category != MPP_problem->v_dishes[x_var[i*N_TIMES_DAY + idx_MAIN_COURSE_2]].category) day_fitness++;
+       if(MPP_problem->v_dishes[x_var[i*N_TIMES_DAY + idx_MORNING_SNACK]].category != MPP_problem->v_dishes[x_var[i*N_TIMES_DAY + idx_EVENING_SNACK]].category) day_fitness++;
+    }
+   //global fitness is taking into consideration the shannon entropy..
+   for(int i = 0; i < MPP_problem->nDias; i++)
+   {
+      
+   }
+  fitness = day_fitness + global_fitness; 
 }
-
-//Individual *MPP::clone() const {
-//	MPP *newInd = new MPP();
-//	newInd->badDays = badDays;
-//	newInd->heaviestNut = heaviestNut;
-//	newInd->heaviestType = heaviestType;
-//	newInd->valorFac = valorFac;
-//	newInd->precioObj = precioObj;
-//	return newInd;
-//}
-
 void MPP::init(){
    x_var.resize(N_TIMES_DAY*MPP_problem->nDias);
    for (int i = 0; i < MPP_problem->nDias; i++){
@@ -225,7 +239,6 @@ void MPP::init(){
 	   }
 	}
 }
-
 void MPP::restart(){
 	for (int i = 0; i < MPP_problem->nDias; i++){
 		for (int j = 0; j < N_TIMES_DAY; j++){
@@ -419,7 +432,9 @@ void MPP::localSearch( ) {
 	//cout << "Final " << valorFac << " " << precioObj << endl;
 }
 
+/*
 
+*/
 int MPP::getDistance(MPP &ind2) {
 return 0.0;
 //	map<Food, int> f1;

@@ -6,15 +6,30 @@ using namespace std;
 #define FOREACH(i, v) for (__typeof((v).begin()) i = (v).begin(); i != (v).end(); i++)
 //v_breakfast, v_morning_snack, v_starter, v_main_course, v_evening_snack, v_dinner, v_both_snack;
 
-#define N_TIMES_DAY 7
+#define CATEGORY_1 1
+#define CATEGORY_2 2
+#define CATEGORY_BOTH 0
+
+#define N_TIMES_DAY 6
 //the times indexes should start with zero
+#define idx_BREAKFAST 0 
+#define idx_MORNING_SNACK 1
+#define idx_STARTER_1 2
+#define idx_STARTER_2 2
+#define idx_MAIN_COURSE_1 4
+#define idx_MAIN_COURSE_2 5
+#define idx_EVENING_SNACK 6
+#define idx_DINNER 7
+
+
 #define BREAKFAST 0 
 #define MORNING_SNACK 1
 #define STARTER 2
 #define MAIN_COURSE 3
 #define EVENING_SNACK 4
 #define DINNER 5
-#define BOTH_SNACK 6
+
+//#define BOTH_SNACK 8
 
 //extern volatile bool finished;
 void printBest();
