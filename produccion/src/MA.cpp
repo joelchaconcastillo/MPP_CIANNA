@@ -180,15 +180,13 @@ void MA::run(){
 		gettimeofday(&currentTime, NULL);
 		elapsedTime = ((double) (currentTime.tv_sec) + (double) (currentTime.tv_usec)/1.0e6)-initialTime;
 		int indexBest = 0;
-		double val = DBL_MAX;
+		double val = population[indexBest]->ind.fitness;
 	       for (int i = 1; i < population.size(); i++){
-		
 		if (val > population[indexBest]->ind.fitness){
 			val = population[indexBest]->ind.fitness;
 			indexBest = i;
 		}
 		}
-
 		cout << population[indexBest]->ind.fitness << endl;
 		population[indexBest]->ind.exportcsv();
 		population[indexBest]->ind.calculateFeasibilityDegree2();

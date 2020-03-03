@@ -244,7 +244,7 @@ void MPP::calculateFeasibilityDegree2(){
 				heaviestType = -1;
 			}
 		} 
-		if (infoNPlan[i] > max){
+		if (infoNPlan[index] > max){
 			cout <<"Mayor obtenido en "<<v_constraints[index].name <<":"<< infoNPlan[index]<<"--"<<max <<" ";
 			double v = pow( (infoNPlan[index] - max)/((max+min)*0.5), 2.0);//pow((infoNPlan[i] - ingR[i] * maxReq[i] * nDias) / (ingR[i] * nDias), 2);
 			valorFac += v;
@@ -330,17 +330,51 @@ void MPP::calculateFeasibilityDegree(){
 */
 void MPP::evaluate(){
     variabilidadObj = 0.0;
+    vector<vector<infoDishes> > &v_times_dishes = MPP_problem->v_times_dishes;
     double variability_day= 0.0, variability_global = 0.0;
     //fitness by day...    
+   int NN = v_times_dishes.size();
+    vector<vector<int>> minv_d(NN), cont_d(NN), dish_d(NN), last_d(NN);
+    for(int k = 0; k < N_OPT_DAY; k++)
+    {
+	minv_d[k] = vector<int>(v_times_dishes[k].size(), INT_MAX);
+	cont_d[k] = vector<int>(v_times_dishes[k].size(), 0);
+	dish_d[k] = vector<int>(v_times_dishes[k].size(), 0);
+	last_d[k] = vector<int>(v_times_dishes[k].size(), -1);
+    }
+
+//    vector<vector<int,int>> minv_d(vectorNN, INT_MAX), cont_d(NN, 0), dish_d(NN, 0), last_d(NN, -1);
    for(int i = 0 ; i < nDias; i++)
    {
-       if(MPP_problem->v_times_dishes[STARTER_1][x_var[i*N_OPT_DAY + STARTER_1]].description != MPP_problem->v_times_dishes[STARTER_2][x_var[i*N_OPT_DAY + STARTER_2]].description ) variability_day++;
-       if(MPP_problem->v_times_dishes[MAIN_COURSE_1][x_var[i*N_OPT_DAY + MAIN_COURSE_1]].description != MPP_problem->v_times_dishes[MAIN_COURSE_2][x_var[i*N_OPT_DAY + MAIN_COURSE_2]].description ) variability_day++;
-       if(MPP_problem->v_times_dishes[MORNING_SNACK][x_var[i*N_OPT_DAY + MORNING_SNACK]].description != MPP_problem->v_times_dishes[EVENING_SNACK][x_var[i*N_OPT_DAY + EVENING_SNACK]].description ) variability_day++;
+       if(v_times_dishes[STARTER_1][x_var[i*N_OPT_DAY + STARTER_1]].description != v_times_dishes[STARTER_2][x_var[i*N_OPT_DAY + STARTER_2]].description ) variability_day++;
+       if(v_times_dishes[MAIN_COURSE_1][x_var[i*N_OPT_DAY + MAIN_COURSE_1]].description != v_times_dishes[MAIN_COURSE_2][x_var[i*N_OPT_DAY + MAIN_COURSE_2]].description ) variability_day++;
+       if(v_times_dishes[MORNING_SNACK][x_var[i*N_OPT_DAY + MORNING_SNACK]].description != v_times_dishes[EVENING_SNACK][x_var[i*N_OPT_DAY + EVENING_SNACK]].description ) variability_day++;
+     for(int k = 0; k < N_OPT_DAY; k++)
+     {
+       int id_dish = x_var[i*N_OPT_DAY + k];
+       if(last_d[k][id_dish] != -1)
+	{
+	  int diff = i - last_d[k][id_dish];
+	  if( minv_d[k][id_dish] > diff)
+	  {
+	   minv_d[k][id_dish] = diff;
+	   cont_d[k][id_dish] = 0;
+	  }
+	  else if(minv_d[k][id_dish] == diff )
+	    cont_d[k][id_dish]++;
+	}
+	last_d[k][id_dish] = i;
+     }
    }
-  variabilidadObj= variability_day + variability_global;
+  for(int k = 0; k < N_OPT_DAY; k++)
+   for(int i = 0; i < NN; i++)
+   {
+    if(last_d[k][i] == -1) continue;
+     variability_global +=  minv_d[k][i] + cont_d[k][i];
+   }
+  variabilidadObj= variability_day + 1e12*variability_global;
   calculateFeasibilityDegree();
-  fitness = (valorFac*1e5 - variabilidadObj);
+  fitness = (valorFac*1e8 - variabilidadObj);
 //  cout << valorFac <<  " " <<variabilidadObj <<endl;
 
 }
@@ -529,7 +563,7 @@ void MPP::localSearch( ) {
 				}
 				sort(infoNut.begin(), infoNut.end());
 				if (heaviestType == 1) reverse(infoNut.begin(), infoNut.end());
-				selectedDay = infoNut[random() % 1].second;
+				selectedDay = infoNut[random() % 5].second;
 				//cout << nDias<<endl;
 			} else {
 				selectedDay = rand() % nDias;
