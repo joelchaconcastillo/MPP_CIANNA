@@ -25,7 +25,7 @@ class MA {
 		void mutation();
 		void localSearch();
 		void replacement();
-
+public:
 		//Internal attributes of MA
 		vector< ExtendedIndividual * > population; 
 		vector< ExtendedIndividual * > parents;

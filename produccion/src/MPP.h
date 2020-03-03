@@ -40,7 +40,7 @@ using namespace std;
 extern int crossoverType;
 extern int nDias;
 void printBest();
-struct infoPlates {
+struct infoDishes {
         int description;	
 	string time_day; //time related with the dish
 	vector<double> v_nutrient_value;    //nutriments meta-data...
@@ -61,10 +61,12 @@ class MPP_Problem{
  		void load_data(int argc, char **argv);
 		void load_constraints(char *Plates_file);
 		void load_dishes(char *Constraints_file);
+		inline int random_dish(int time_dish){return rand()%(int)v_times_dishes[time_dish].size();}
 
-		vector<infoPlates> v_dishes;
-		vector<vector<int> > v_times_dishes;  // the same as ->  vector<int> v_breakfast, v_morning_snack, v_starter, v_main_course, v_evening_snack, v_dinner;
+//		vector<infoDishes> v_dishes;
+		vector<vector<infoDishes> > v_times_dishes;  // the same as ->  vector<int> v_breakfast, v_morning_snack, v_starter, v_main_course, v_evening_snack, v_dinner;
 		vector<constraint_nutrient> v_constraints;
+		unordered_map<string, int> dic_nut_id;
 		vector<int> v_constraint_global, v_constraint_day;
 };
 class MPP{
@@ -100,7 +102,7 @@ class MPP{
 	private:
 		void calculateFeasibilityDegree();
 		int heaviestNut, heaviestType;
-		double valorFac;//, precioObj;
+		double valorFac, variabilidadObj;//factibility and variability of the current solution..
 		set<int> badDays;
 
 };

@@ -20,10 +20,9 @@ int main(int argc, char **argv){
 	//loading the input data...
 	MPP_Problem STP;
         STP.load_data(argc, argv);
-
-        //everithinh seem's to be OK, thus starting the algorithm...
-	MA ma(N, pc, pm, finalTime);
-	
 	MPP::MPP_problem = &STP;
+        //everithing seem's to be OK, thus starting the algorithm...
+	MA ma(N, pc, pm, finalTime);
 	ma.run();
+
 }

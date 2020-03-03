@@ -13,7 +13,7 @@ void printer(int signal){
 
 MA::MA(int N_, double pc_, double pm_, double finalTime_){
 	//signal(SIGTERM, printer);
-	if (N % 2){ cerr << "El tam. de poblacion debe ser par" << endl; exit(-1); }
+	if (N_ % 2){ cerr << "El tam. de poblacion debe ser par" << endl; exit(-1); }
 	N = N_;
 	pc = pc_;
 	pm = pm_;
@@ -151,13 +151,18 @@ void MA::initDI(){
 	}
 	meanDistance /= (population.size() * (population.size() - 1)) / 2;
 	DI = meanDistance * 1;//TODO: Check
+//	DI=0;
 }
 
 void MA::run(){
 	initPopulation();
 	initDI();
 	int generation = 0;
+//	population[0]->ind.localSearch();
+//	return;
+
 	while(true){//Infinitas generaciones
+		cout << population[0]->ind.fitness << endl;
 		int minDistance = INT_MAX;
 		for (int i = 0; i < population.size(); i++){
 			for (int j = i + 1; j < population.size(); j++){
@@ -170,6 +175,7 @@ void MA::run(){
 		localSearch();
 		replacement();
 		generation++;
+		cout << population[0]->ind.fitness << endl;
 	}
 	printBest();
 }
