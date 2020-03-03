@@ -95,7 +95,7 @@ void MA::replacement(){
 		}
 	}
 	population.push_back(all[indexBest]);
-	all[indexBest] = all.back();
+	all[indexBest] = all.back(); //!!?
 	all.pop_back();
 
 	struct timeval currentTime; 
@@ -160,9 +160,11 @@ void MA::run(){
 	int generation = 0;
 //	population[0]->ind.localSearch();
 //	return;
-
-	while(true){//Infinitas generaciones
-		cout << population[0]->ind.fitness << endl;
+	struct timeval currentTime; 
+	gettimeofday(&currentTime, NULL);
+	double elapsedTime = (double) (currentTime.tv_sec) + (double) (currentTime.tv_usec)/1.0e6;
+	elapsedTime -= initialTime;
+	while(elapsedTime < finalTime){//Infinitas generaciones
 		int minDistance = INT_MAX;
 		for (int i = 0; i < population.size(); i++){
 			for (int j = i + 1; j < population.size(); j++){
@@ -175,8 +177,11 @@ void MA::run(){
 		localSearch();
 		replacement();
 		generation++;
+		gettimeofday(&currentTime, NULL);
+		elapsedTime = ((double) (currentTime.tv_sec) + (double) (currentTime.tv_usec)/1.0e6)-initialTime;
 		cout << population[0]->ind.fitness << endl;
+		population[0]->ind.exportcsv();
 	}
-	printBest();
+//	printBest();
 }
 

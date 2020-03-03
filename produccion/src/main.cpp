@@ -10,12 +10,13 @@
 //int crossoverType;
 int main(int argc, char **argv){
 
-	srand(time(NULL)); //check this!!! ??
-	int N = 50;
-	double pc = 0.9;
+	srand(1); //check this!!! ??
+	//srand(time(NULL)); //check this!!! ??
+	int N = 10;
+	double pc = 1.0;
 	double pm = 0.01;
 	double finalTime = atof(argv[4])*60;//25 * 60;
-	crossoverType= UNIFORM_CROSSOVER; //UNIFORM2_CROSSOVER, PAIR_BASED_CROSSOVER
+	crossoverType= PAIR_BASED_CROSSOVER;//UNIFORM_CROSSOVER; //UNIFORM2_CROSSOVER, PAIR_BASED_CROSSOVER
 
 	//loading the input data...
 	MPP_Problem STP;

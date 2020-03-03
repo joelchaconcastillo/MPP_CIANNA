@@ -43,7 +43,9 @@ void MPP_Problem::load_data(int argc, char **argv)
 	 cout << "N\'umero de argumentos inv\'alidos" <<endl;
 	 exit(EXIT_FAILURE);
     }
+    out_filename = string(argv[5]);
     nDias = atoi(argv[3]);
+
     ////reading the information.......
     v_times_dishes.resize(N_OPT_DAY); //N_times_dishes...
     load_constraints(argv[2]); 
@@ -63,25 +65,42 @@ void MPP_Problem::load_dishes(char *c_filename)
 	   vector<string> column_names;
 	//Here is assumed that the first two columns are of the "DESCRIPCION" and "TIEMPO" respectively, thereafter are the meta-data and the last two columns are "CATEGORIA" and "FAVORITO" respectively.
 	   while(getline(line_commas ,word, ',')) //first getting the tag-information of each column....
-	   column_names.push_back(word);
+	   column_names.push_back(trim(word));
 	   while (ifs.good())
 	   {
 	       string cell;
-	       getline(ifs, cell, ',');
-	       if(trim(cell).empty()) break; //The file has an extra empty line
-               str_dish.description = stoi(cell);
-	       getline(ifs, cell, ',');
-               str_dish.time_day = trim(cell);
+	       //getline(ifs, cell, ',');
+	       //if(trim(cell).empty()) break; //The file has an extra empty line
+               //str_dish.description = stoi(cell);
+	       //getline(ifs, cell, ',');
+               //str_dish.time_day = trim(cell);
 	       str_dish.v_nutrient_value.resize(v_constraints.size(), 0.0); 
-               for(int i = 0; i < column_names.size()-4; i++)
+               for(int i = 0; i < column_names.size(); i++)
                {
-	          getline(ifs, cell, ',');
-		  str_dish.v_nutrient_value[dic_nut_id[column_names[i]]] = stod(cell); //the nutrient values need to be stored in the same order that the contraints..
+		  if(i==column_names.size()-1)
+	             getline(ifs, cell, '\n');
+		  else
+	             getline(ifs, cell, ',');
+		  cell = trim(cell);
+	       if(cell.empty()) break; //The file has an extra empty line
+		  if( column_names[i] == "DESCRIPCION") 
+               		str_dish.description = stoi(cell);
+		  else if( column_names[i] == "TIEMPO")
+               		str_dish.time_day = trim(cell);
+		  else if( column_names[i] == "CATEGORIA")
+	       		str_dish.category = stoi(cell);
+		  else if( column_names[i] == "FAVORITO")
+               		str_dish.favorite = (bool)stoi(cell);
+		  else{
+			if( dic_nut_id.find(column_names[i]) != dic_nut_id.end())
+		           str_dish.v_nutrient_value[dic_nut_id[column_names[i]]] = stod(cell); //the nutrient values need to be stored in the same order that the contraints..
+			}
                }
-	       getline(ifs, cell, ',');
-	       str_dish.category = stoi(cell);
-	       getline(ifs, cell, '\n');
-               str_dish.favorite = (bool)stoi(cell);
+	       if(cell.empty()) break; //The file has an extra empty line
+//	       getline(ifs, cell, ',');
+//	       str_dish.category = stoi(cell);
+//	       getline(ifs, cell, '\n');
+//               str_dish.favorite = (bool)stoi(cell);
 		
 	       if(str_dish.time_day == "DESAYUNO") v_times_dishes[BREAKFAST].push_back(str_dish);
 	       else if(str_dish.time_day == "COLACION_MATUTINA") v_times_dishes[MORNING_SNACK].push_back(str_dish);
@@ -140,7 +159,7 @@ void MPP_Problem::load_constraints(char *c_filename)
 	   stringstream line_commas(line);
 	   vector<string> column_names;
 	   while(getline(line_commas ,word, ',')) //first getting the tag-information of each column....
-	   column_names.push_back(word);
+	   column_names.push_back(trim(word));
 	   while (ifs.good())
 	   {
 	       string cell;
@@ -191,19 +210,22 @@ void MPP::calculateFeasibilityDegree(){
 			double max = v_constraints[index].max;
 			if(dayNutr[index] < min){
 				//valorFac +=pow((min - dayNutr[index])/min, 2.0)*1.0e6;
-				valorFac +=pow((min - dayNutr[index])/((max-min)*0.5), 2.0)*1.0e6;//	 pow((ingR[index] * FORCED_MIN[j] - dayNutr[index]) / ingR[index], 2) * 1000000.0;
+				valorFac +=pow((min - dayNutr[index])/((max+min)*0.5), 2.0)*1.0e6;//	 pow((ingR[index] * FORCED_MIN[j] - dayNutr[index]) / ingR[index], 2) * 1000000.0;
+		//		cout << "-"<<v_constraints[index].name <<"-"<< dayNutr[index]<<"__"<<min <<" ";
 				badDays.insert(i);
 			}
 			 if (dayNutr[index] > max){
 			//	valorFac +=pow((dayNutr[index] - max)/max, 2.0)*1.0e6;
-				valorFac +=pow((dayNutr[index]-max)/((max-min)*0.5), 2.0)*1.0e6;// pow((dayNutr[index] - ingR[index] * FORCED_MAX[j]) / ingR[index], 2) * 1000000.0;
+				valorFac +=pow((dayNutr[index]-max)/((max+min)*0.5), 2.0)*1.0e6;// pow((dayNutr[index] - ingR[index] * FORCED_MAX[j]) / ingR[index], 2) * 1000000.0;
+	//			cout << "-"<<v_constraints[index].name <<"-"<< dayNutr[index]<<"__"<<max <<" ";
 				badDays.insert(i);
 			}
 		}
+	//cout <<endl<<endl;
 	}
 	////////////////global nutriments...
 	double heaviestValue = 0;
-	//heaviestNut = -1;
+	heaviestNut = -1;
 	for(unsigned int i = 0; i < (int) MPP_problem->v_constraint_global.size(); i++){
 	//	if ((i == CALCIUM_INDEX) || (i == POTASIUM_INDEX) || (i == IRON_INDEX)) continue;
 		int index = MPP_problem->v_constraint_global[i];
@@ -211,7 +233,7 @@ void MPP::calculateFeasibilityDegree(){
 		double max = v_constraints[index].max;
 
 		if (infoNPlan[index] < min){
-			double v = pow((min - infoNPlan[index])/((max-min)*0.5), 2.0);//pow((ingR[i] * minReq[i] * nDias - infoNPlan[i]) / (ingR[i] * nDias), 2);
+			double v = pow((min - infoNPlan[index])/((max+min)*0.5), 2.0);//pow((ingR[i] * minReq[i] * nDias - infoNPlan[i]) / (ingR[i] * nDias), 2);
 			valorFac += v;
 			if (v > heaviestValue){
 				heaviestValue = v;
@@ -220,7 +242,7 @@ void MPP::calculateFeasibilityDegree(){
 			}
 		} 
 		if (infoNPlan[i] > max){
-			double v = pow( (infoNPlan[index] - max)/((max-min)*0.5), 2.0);//pow((infoNPlan[i] - ingR[i] * maxReq[i] * nDias) / (ingR[i] * nDias), 2);
+			double v = pow( (infoNPlan[index] - max)/((max+min)*0.5), 2.0);//pow((infoNPlan[i] - ingR[i] * maxReq[i] * nDias) / (ingR[i] * nDias), 2);
 			valorFac += v;
 			if (v > heaviestValue){
 				heaviestValue = v;
@@ -394,7 +416,7 @@ void MPP::localSearch( ) {
 	}
 	vector<int> bestIndividual = x_var;
 	evaluate();
-	cout <<valorFac<<endl;
+	//cout <<"entra..."<<valorFac<<endl;
 	pair<double, double> bestResult = make_pair(valorFac, -variabilidadObj);
 	for (int i = 0; i < 100; i++){
 		evaluate();
@@ -423,7 +445,7 @@ void MPP::localSearch( ) {
 		} else {
 			bestResult = currentResult;
 			bestIndividual = x_var;
-			cout << currentResult.first <<endl;
+	//		cout << currentResult.first <<endl;
 		}
 
 		evaluate();
@@ -456,6 +478,7 @@ void MPP::localSearch( ) {
 	}
 	x_var = bestIndividual;
 	evaluate();
+	cout <<"sale--- "<< valorFac<<endl;
 	//cout << "Final " << valorFac << " " << precioObj << endl;
 }
 
@@ -509,4 +532,18 @@ void MPP::print(ostream &os) const {
 //	os << valorFac << " " << precioObj << endl;
 }
 
+void MPP::exportcsv()
+{
+   ofstream ofs;
+   ofs.open(MPP_problem->out_filename.c_str());
+   ofs<<"DIA , DESAYUNO , COLACION_MATUTINA , COMIDA_ENTRADA , COMIDA_ENTRADA , COMIDA_PRINCIPAL , COMIDA_PRINCIPAL , COLACION_VESPERTINA , CENA \n";
+    
+   for(int i = 0; i < nDias; i++)
+   {
+	ofs << i+1;
+	for(int j = 0; j < N_OPT_DAY; j++) ofs<< " , "<<MPP_problem->v_times_dishes[j][x_var[i*N_OPT_DAY + j]].description;
+	ofs<<"\n";
+   }
+   ofs.close();
+}
 
