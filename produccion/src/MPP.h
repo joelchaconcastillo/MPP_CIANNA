@@ -95,6 +95,8 @@ class MPP{
 		void exportcsv();
 		virtual void print(ostream &os) const;
 
+
+		void calculateFeasibilityDegree2();
 //!menu planning
 
 		vector<int> x_var;
@@ -103,6 +105,7 @@ class MPP{
 
 	private:
 		void calculateFeasibilityDegree();
+
 		int heaviestNut, heaviestType;
 		double valorFac, variabilidadObj;//factibility and variability of the current solution..
 		set<int> badDays;

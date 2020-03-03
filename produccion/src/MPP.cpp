@@ -187,6 +187,75 @@ void MPP_Problem::load_constraints(char *c_filename)
 		exit(EXIT_FAILURE);
 	}
 }
+void MPP::calculateFeasibilityDegree2(){
+	valorFac = 0.0;
+	int num_nutr = (int)MPP_problem->v_constraints.size();
+	vector<constraint_nutrient> &v_constraints = (MPP_problem->v_constraints);
+	double infoNPlan[num_nutr];
+	bzero(infoNPlan, sizeof(infoNPlan));
+	badDays.clear();
+	cout << "diario"<<endl;
+	for(int i = 0; i < nDias; i++){
+		int x = i*N_OPT_DAY;
+		double dayNutr[num_nutr];
+		bzero(dayNutr, sizeof(dayNutr));
+		for(unsigned int j = 0; j < num_nutr; j++){
+			for(unsigned int k = 0; k < N_OPT_DAY; k++)
+		 	   dayNutr[j] += MPP_problem->v_times_dishes[k][x_var[x+k]].v_nutrient_value[j];
+			infoNPlan[j] += dayNutr[j]; //for global nutr..
+		}
+               //////////daily nutrients...
+		for (int j = 0; j < (int)MPP_problem->v_constraint_day.size(); j++){
+			int index = MPP_problem->v_constraint_day[j];
+			double min = v_constraints[index].min;
+			double max = v_constraints[index].max;
+			if(dayNutr[index] < min){
+				//valorFac +=pow((min - dayNutr[index])/min, 2.0)*1.0e6;
+				valorFac +=pow((min - dayNutr[index])/((max+min)*0.5), 2.0)*1.0e6;//	 pow((ingR[index] * FORCED_MIN[j] - dayNutr[index]) / ingR[index], 2) * 1000000.0;
+				cout <<"Menor obtenido en " <<v_constraints[index].name <<":"<< dayNutr[index]<<"--"<<min <<" Dia "<<i <<" ";
+				badDays.insert(i);
+			}
+			 if (dayNutr[index] > max){
+			//	valorFac +=pow((dayNutr[index] - max)/max, 2.0)*1.0e6;
+				valorFac +=pow((dayNutr[index]-max)/((max+min)*0.5), 2.0)*1.0e6;// pow((dayNutr[index] - ingR[index] * FORCED_MAX[j]) / ingR[index], 2) * 1000000.0;
+				cout <<"Mayor obtenido en "<<v_constraints[index].name <<":"<< dayNutr[index]<<"--"<<max <<" Dia "<< i<<" ";
+				badDays.insert(i);
+			}
+		}
+	cout <<endl<<endl;
+	}
+	cout << "global"<<endl;
+	////////////////global nutriments...
+	double heaviestValue = 0;
+	heaviestNut = -1;
+	for(unsigned int i = 0; i < (int) MPP_problem->v_constraint_global.size(); i++){
+	//	if ((i == CALCIUM_INDEX) || (i == POTASIUM_INDEX) || (i == IRON_INDEX)) continue;
+		int index = MPP_problem->v_constraint_global[i];
+		double min = v_constraints[index].min;
+		double max = v_constraints[index].max;
+
+		if (infoNPlan[index] < min){
+			double v = pow((min - infoNPlan[index])/((max+min)*0.5), 2.0);//pow((ingR[i] * minReq[i] * nDias - infoNPlan[i]) / (ingR[i] * nDias), 2);
+			cout <<"Menor obtenido en "<<v_constraints[index].name <<":"<< infoNPlan[index]<<"--"<<min <<" ";
+			valorFac += v;
+			if (v > heaviestValue){
+				heaviestValue = v;
+				heaviestNut = index;
+				heaviestType = -1;
+			}
+		} 
+		if (infoNPlan[i] > max){
+			cout <<"Mayor obtenido en "<<v_constraints[index].name <<":"<< infoNPlan[index]<<"--"<<max <<" ";
+			double v = pow( (infoNPlan[index] - max)/((max+min)*0.5), 2.0);//pow((infoNPlan[i] - ingR[i] * maxReq[i] * nDias) / (ingR[i] * nDias), 2);
+			valorFac += v;
+			if (v > heaviestValue){
+				heaviestValue = v;
+				heaviestNut = index;
+				heaviestType = 1;
+			}
+		}
+	}
+}
 void MPP::calculateFeasibilityDegree(){
 	valorFac = 0.0;
 	int num_nutr = (int)MPP_problem->v_constraints.size();
