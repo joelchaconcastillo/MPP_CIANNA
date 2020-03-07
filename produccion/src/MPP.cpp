@@ -342,7 +342,7 @@ void MPP::evaluate(){
   variabilidadObj= variability_day + pow(variability_global,2);
   calculateFeasibilityDegree();
   //fitness = 1.0/(valorFac + 1.0e4/variabilidadObj);
-  fitness =valorFac - 1.0e3*variabilidadObj;// 1.0/(valorFac+0.0001);
+  fitness =valorFac ;//- 1.0e3*variabilidadObj;// 1.0/(valorFac+0.0001);
 //  cout << valorFac <<  " " <<variabilidadObj <<endl;
 
 }
@@ -476,7 +476,7 @@ struct Neighbor {
 void MPP::localSearch( ) {
 	vector<Neighbor> neighbors;
 	for (int i = 0; i < nDias; i++){
-		for (int j = 0; j < N_OPT_DAY; j++){
+		for (int j = 0; j <N_OPT_DAY; j++){
 			for (int k = 0; k < (int) MPP_problem->v_times_dishes[j].size(); k++){
 				Neighbor n;
 				n.variable = i * N_OPT_DAY + j;
@@ -489,7 +489,7 @@ void MPP::localSearch( ) {
 	evaluate();
 	//cout <<"entra..."<<valorFac<<endl;
 	pair<double, double> bestResult = make_pair(valorFac, -variabilidadObj);
-	for (int i = 0; i < 100; i++){
+	for (int i = 0; i < 1000; i++){
 		evaluate();
 		pair<double, double> currentResult = make_pair(valorFac, -variabilidadObj);
 		bool improved = true;
@@ -500,7 +500,6 @@ void MPP::localSearch( ) {
 				int currentValue = x_var[neighbors[i].variable];
 				x_var[neighbors[i].variable] = neighbors[i].newValue;
 				evaluate();
-				//cout << valorFac<<endl;
 				pair<double, double> newResult = make_pair(valorFac, -variabilidadObj); //note: variability is maximized..
 				if (newResult >= currentResult){
 					x_var[neighbors[i].variable] = currentValue;
@@ -510,13 +509,13 @@ void MPP::localSearch( ) {
 				}
 			}
 		}
-
 		if (currentResult >= bestResult){
 			x_var = bestIndividual;
 		} else {
 			bestResult = currentResult;
 			bestIndividual = x_var;
-	//		cout << currentResult.first <<endl;
+			//cout << "--> "<< valorFac<<endl;
+			cout << currentResult.first <<endl;
 		}
 
 		evaluate();
@@ -541,17 +540,33 @@ void MPP::localSearch( ) {
 			for(int k = 0; k < N_OPT_DAY; k++) x_var[selectedDay*N_OPT_DAY + k] = MPP_problem->random_dish(k);
 
 		} else {
+			cout << "Dias: " << badDays.size() << endl;
+			vector<int> v;
 			for (auto it = badDays.begin(); it != badDays.end(); it++){
+				v.push_back(*it);
+			}
+			random_shuffle(v.begin(), v.end());
+			for (auto it = v.begin(); it != v.end(); it++){
+
 				int day = *it;
-				int which = rand() % N_OPT_DAY;
-				x_var[day * N_OPT_DAY + which] = MPP_problem->random_dish(which);
+				if (random()%2){
+					for(int k = 0; k < N_OPT_DAY; k++) x_var[day*N_OPT_DAY + k] = MPP_problem->random_dish(k);
+				} else {
+					int which = rand() % N_OPT_DAY;
+					x_var[day * N_OPT_DAY + which] = MPP_problem->random_dish(which);
+				}
+				//break;
+				//cout << which << " "<<	x_var[day * N_OPT_DAY + which]<<endl;
 			}
 		}
 	}
 	x_var = bestIndividual;
 	evaluate();
 	cout <<"sale--- "<< valorFac<< " " <<variabilidadObj << endl;
+	calculateFeasibilityDegree2();
+	
 	//cout << "Final " << valorFac << " " << precioObj << endl;
+   exit(0);
 }
 
 /*
