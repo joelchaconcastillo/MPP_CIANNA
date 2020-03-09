@@ -624,6 +624,7 @@ void MPP::full_search()
  fill(x_var.begin(), x_var.end(),0);
  long int cont = 0, max_perm =1;
    for(int max_opt = 0; max_opt < N_OPT_DAY; max_opt++)max_perm *= (int)MPP_problem->v_times_dishes[max_opt].size();
+ cout << max_perm<<endl;
 //  max_perm = pow(10, N_OPT_DAY);
  evaluate();
  pair< double, double> bestResult;
@@ -631,7 +632,11 @@ void MPP::full_search()
  vector<int> x_best = x_var;
  while(cont++ < max_perm)
  {
-
+   if( (cont % (long)1e8 )== 0)
+   {
+     cout << "========\n " << (double)cont/(double)max_perm<<endl;
+        cout << bestResult.first << " " <<bestResult.second<< " " <<cont<<endl;
+   }
    evaluate();
    double current = valorFac;
    if( current < bestResult.first)
