@@ -89,6 +89,7 @@ class MPP{
 		void pairBasedCrossover(MPP &i2);
 		void localSearch();
 		int getDistance(MPP &ind2); 
+		void full_search();
 		double inline getMaximum(const int i) const { cerr << "ErrorL llama a getMaximum" << endl; exit(-1); return 0; }
 		double inline getMinimum(const int i) const { cerr << "Error: llama a getMinimum" << endl; exit(-1); return 0; }
 		//unsigned int inline getOptDirection(const int i) const { return MAXIMIZE; }

@@ -617,3 +617,66 @@ void MPP::exportcsv()
    ofs.close();
 }
 
+void MPP::full_search()
+{
+ vector< vector<int> > feasible_solutions;
+ vector<pair<double, double > > fit_sol;
+ fill(x_var.begin(), x_var.end(),0);
+ long int cont = 0, max_perm =1;
+   for(int max_opt = 0; max_opt < N_OPT_DAY; max_opt++)max_perm *= (int)MPP_problem->v_times_dishes[max_opt].size();
+  max_perm = pow(10, N_OPT_DAY);
+ evaluate();
+ pair< double, double> bestResult;
+ bestResult.first = valorFac;
+ vector<int> x_best = x_var;
+ while(cont++ < max_perm)
+ {
+
+   evaluate();
+   double current = valorFac;
+   if( current < bestResult.first)
+   {
+	bestResult.first = current;
+	bestResult.second = variabilidadObj;
+	x_best = x_var;		
+        cout << bestResult.first << " " <<bestResult.second<< " " <<cont<<endl;
+   }
+   else if( current <= 1e-9) //feasible solution
+   {
+	feasible_solutions.push_back(x_var);
+        fit_sol.push_back(make_pair(valorFac, variabilidadObj));
+   }
+
+   x_var[0]++;
+   for(int max_opt = 0; max_opt < N_OPT_DAY; max_opt++)
+   {
+      if(x_var[max_opt] >= 10)//MPP_problem->v_times_dishes[idx].size();)
+      {
+	x_var[max_opt] = 0;
+	if(max_opt+1 < N_OPT_DAY)
+        x_var[max_opt+1]++;
+      }
+   }
+ }
+ if(feasible_solutions.empty()) 
+  {
+    feasible_solutions.push_back(x_best);
+     fit_sol.push_back(bestResult);
+  }
+  
+   cout << bestResult.first << " " <<bestResult.second<<endl;
+   ofstream ofs;
+   ofs.open(MPP_problem->out_filename.c_str());
+   ofs<<"Factibilidad , Variabilidad , DESAYUNO , COLACION_MATUTINA , COMIDA_ENTRADA , COMIDA_ENTRADA , COMIDA_PRINCIPAL , COMIDA_PRINCIPAL , COLACION_VESPERTINA , CENA \n";
+ ///exporting solutions....
+ for(int i = 0; i < feasible_solutions.size(); i++)
+ {
+    ofs << fit_sol[i].first << " , "<< fit_sol[i].second<< " , ";
+    for(int j = 0; j < feasible_solutions[i].size(); j++)
+    {
+	for(int j = 0; j < N_OPT_DAY; j++) ofs<< " , "<<MPP_problem->v_times_dishes[j][x_var[i*N_OPT_DAY + j]].description;
+	ofs<<"\n";
+    } 
+    ofs.close();
+ }
+}
