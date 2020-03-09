@@ -624,7 +624,7 @@ void MPP::full_search()
  fill(x_var.begin(), x_var.end(),0);
  long int cont = 0, max_perm =1;
    for(int max_opt = 0; max_opt < N_OPT_DAY; max_opt++)max_perm *= (int)MPP_problem->v_times_dishes[max_opt].size();
-  max_perm = pow(10, N_OPT_DAY);
+//  max_perm = pow(10, N_OPT_DAY);
  evaluate();
  pair< double, double> bestResult;
  bestResult.first = valorFac;
@@ -650,7 +650,7 @@ void MPP::full_search()
    x_var[0]++;
    for(int max_opt = 0; max_opt < N_OPT_DAY; max_opt++)
    {
-      if(x_var[max_opt] >= 10)//MPP_problem->v_times_dishes[idx].size();)
+      if(x_var[max_opt] >= MPP_problem->v_times_dishes[max_opt].size())
       {
 	x_var[max_opt] = 0;
 	if(max_opt+1 < N_OPT_DAY)
