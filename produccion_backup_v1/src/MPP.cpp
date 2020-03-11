@@ -155,10 +155,7 @@ void MPP_Problem::load_constraints(char *c_filename)
 	       string cell;
 	       getline(ifs, cell, ',');
 	       if(trim(cell).empty()) break; //The file has an extra empty line
-		if( trim(cell) == "GLOBAL") str_constraint_nutrient.type=GLOBAL;
-		else if( trim(cell) == "DIARIA") str_constraint_nutrient.type=DIARIA;
-               //str_constraint_nutrient.type = trim(cell);
-	       
+               str_constraint_nutrient.type = trim(cell);
 	       getline(ifs, cell, ',');
 	       str_constraint_nutrient.name = trim(cell);
 	       getline(ifs, cell, ',');
@@ -166,8 +163,8 @@ void MPP_Problem::load_constraints(char *c_filename)
 	       getline(ifs, cell, '\n'); //last word...
                str_constraint_nutrient.max = stod(cell);
 	       dic_nut_id[str_constraint_nutrient.name] = (int) v_constraints.size();
-	       if( str_constraint_nutrient.type == GLOBAL) v_constraint_global.push_back((int)v_constraints.size());
-	       else if( str_constraint_nutrient.type == DIARIA) v_constraint_day.push_back((int)v_constraints.size());
+	       if( str_constraint_nutrient.type == "GLOBAL") v_constraint_global.push_back((int)v_constraints.size());
+	       else if( str_constraint_nutrient.type == "DIARIA") v_constraint_day.push_back((int)v_constraints.size());
 	       else{
 		   cout << "Se desconoce un tipo de restricci\'on, \'unicamente puede ser por d\'ia o global"<<endl;
 		   exit(EXIT_FAILURE);
@@ -622,29 +619,17 @@ void MPP::exportcsv()
 
 void MPP::full_search()
 {
-  vector<double> globalPlan, nutriment_per_day;
-  vector<int> sol;
-  set<int> daysInConflict;
-  pair<int, bool> heaviestNut;
-  double unfeasibility_value;
-
-
  vector< vector<int> > feasible_solutions;
  vector<pair<double, double > > fit_sol;
  fill(x_var.begin(), x_var.end(),0);
  long int cont = 0, max_perm =1;
    for(int max_opt = 0; max_opt < N_OPT_DAY; max_opt++)max_perm *= (int)MPP_problem->v_times_dishes[max_opt].size();
- 
-//  max_perm = pow(6, N_OPT_DAY);
  cout << max_perm<<endl;
+//  max_perm = pow(10, N_OPT_DAY);
  evaluate();
  pair< double, double> bestResult;
+ bestResult.first = valorFac;
  vector<int> x_best = x_var;
-
- init_incremental_evaluation(globalPlan, unfeasibility_value, nutriment_per_day, x_best, daysInConflict, heaviestNut);
- int day = 0;
- bestResult.first = inc_eval_feas_day(globalPlan, nutriment_per_day, daysInConflict, heaviestNut, x_best, x_best, day);
-
  while(cont++ < max_perm)
  {
    if( (cont % (long)1e8 )== 0)
@@ -652,14 +637,12 @@ void MPP::full_search()
      cout << "========\n " << (double)cont/(double)max_perm<<endl;
         cout << bestResult.first << " " <<bestResult.second<< " " <<cont<<endl;
    }
-   //evaluate();
-//   double current = valorFac;
-   double current = inc_eval_feas_day(globalPlan, nutriment_per_day, daysInConflict, heaviestNut, x_var, x_var, day);
-//  cout << bestResult.first << " " <<current<<endl;
+   evaluate();
+   double current = valorFac;
    if( current < bestResult.first)
    {
 	bestResult.first = current;
-//	bestResult.second = variabilidadObj;
+	bestResult.second = variabilidadObj;
 	x_best = x_var;		
         cout << bestResult.first << " " <<bestResult.second<< " " <<cont<<endl;
    }
@@ -701,170 +684,4 @@ void MPP::full_search()
     } 
     ofs.close();
  }
-}
-
-
-void MPP::init_incremental_evaluation(vector<double> &globalPlan, double &unfeasibility_value, vector<double> &nutriment_per_day, vector<int> &sol, set<int> &daysInConflict, pair<int, bool> &heaviestNut ){
-	unfeasibility_value = 0.0;
-	int num_nutr = (int)MPP_problem->v_constraints.size();
-	vector<constraint_nutrient> &v_constraints = (MPP_problem->v_constraints);
-        globalPlan.assign(num_nutr, 0.0);
-	daysInConflict.clear();
-	for(int i = 0; i < nDias; i++)
-	{
-	   int x = i*N_OPT_DAY;
-	   nutriment_per_day.assign(num_nutr, 0.0);
-	   for(unsigned int j = 0; j < num_nutr; j++)
-	   {
-	   	for(unsigned int k = 0; k < N_OPT_DAY; k++)
-	    	   nutriment_per_day[j] += MPP_problem->v_times_dishes[k][sol[x+k]].v_nutrient_value[j];
-	   	globalPlan[j] += nutriment_per_day[j]; 
-	   }
-	   for(auto index = MPP_problem->v_constraint_day.begin(); index != MPP_problem->v_constraint_day.end(); index++)
-	   {
-	   	double minv = v_constraints[*index].min, maxv = v_constraints[*index].max;
-	   	if(nutriment_per_day[*index] < minv)
-	   	{
-	   		unfeasibility_value +=pow((minv - nutriment_per_day[*index])/minv, 2.0)*1.0e6;
-	   		daysInConflict.insert(i);
-	   	}
-	   	 if (nutriment_per_day[*index] > maxv)
-	   	{
-	   		unfeasibility_value +=pow((nutriment_per_day[*index] - maxv)/maxv, 2.0)*1.0e6;
-	   		daysInConflict.insert(i);
-	   	}
-	   }
-	}
-	////////////////global nutriments...
-	double heaviestValue = 0;
-	heaviestNut.second = false;
-	for(auto index = MPP_problem->v_constraint_global.begin(); index != MPP_problem->v_constraint_global.end(); index++)
-	{
-	   double min = v_constraints[*index].min*nDias, max = v_constraints[*index].max*nDias;
-	   if (globalPlan[*index] < min){
-	   	double v = pow((min - globalPlan[*index])/min, 2.0);//pow((ingR[i] * minReq[i] * nDias - infoNPlan[i]) / (ingR[i] * nDias), 2);
-	   	unfeasibility_value += v;
-	   	if (v > heaviestValue) heaviestValue = v, heaviestNut.first = *index, heaviestNut.second= false;
-	   } 
-	   if (globalPlan[*index] > max){
-	   	double v = pow( (globalPlan[*index] - max)/max, 2.0);//pow((infoNPlan[i] - ingR[i] * maxReq[i] * nDias) / (ingR[i] * nDias), 2);
-	   	unfeasibility_value += v;
-	   	if (v > heaviestValue)heaviestValue = v, heaviestNut.first = *index, heaviestNut.second = true;
-	   }
-	}
-}
-double MPP::inc_eval_feas_time(vector<double> &globalPlan, vector<double> &nutriment_per_day, set<int> &daysInConflict, pair<int, bool> &heaviestNut, pair<int, int> &current, pair<int, int> &next)
-{
-    int num_nutr = (int)MPP_problem->v_constraints.size();
-    vector<constraint_nutrient> &v_constraints = (MPP_problem->v_constraints);
-    double unfeasibility_next  = 0.0;
-  //  double heaviestValue = 0;
-  //  heaviestT= false;
-    for(unsigned int j = 0; j < num_nutr; j++)
-    {
-	double diff = (-MPP_problem->v_times_dishes[current.first][current.second].v_nutrient_value[j] + MPP_problem->v_times_dishes[next.first][next.second].v_nutrient_value[j]);
-        nutriment_per_day[j] += diff;
-	globalPlan[j] += diff;
-
-	double minv = v_constraints[j].min, maxv = v_constraints[j].max;
-	if( v_constraints[j].type == DIARIA)
-	{
-	   if(nutriment_per_day[j] < minv)
-	   {
-	      unfeasibility_next += pow((minv - nutriment_per_day[j])/minv, 2.0)*1.0e6;
-	     // daysInConflict.insert(i);
-	   }
-	   if (nutriment_per_day[j] > maxv)
-	   {
-	      unfeasibility_next += pow((nutriment_per_day[j] - maxv)/maxv, 2.0)*1.0e6;
-	      //daysInConflict.insert(i);
-	   }
-	}
-	else if( v_constraints[j].type == GLOBAL)
-	{
-	  if(globalPlan[j] < minv)
-	  {
-       	     double v = pow((minv - globalPlan[j])/minv, 2.0);//pow((ingR[i] * minReq[i] * nDias - infoNPlan[i]) / (ingR[i] * nDias), 2);
-       	     unfeasibility_next += v;
-       	     //if(v > heaviestValue) heaviestValue = v, idx_heaviestNut = *index, heaviestT = false;
-          } 
-          if(globalPlan[j] > maxv)
-	  {
-       	     double v = pow( (globalPlan[j] - maxv)/maxv, 2.0);//pow((infoNPlan[i] - ingR[i] * maxReq[i] * nDias) / (ingR[i] * nDias), 2);
-       	     unfeasibility_next += v;
-       	     //if(v > heaviestValue)heaviestValue = v, idx_heaviestNut = *index, heaviestT = true;
-          }
-	}
-    }  
-    for(unsigned int j = 0; j < num_nutr; j++) //get back values...
-    {
-	double diff = (MPP_problem->v_times_dishes[current.first][current.second].v_nutrient_value[j] - MPP_problem->v_times_dishes[next.first][next.second].v_nutrient_value[j]);
-        nutriment_per_day[j] += diff;
-	globalPlan[j] += diff;
-    }
-  return unfeasibility_next;
-}
-double MPP::inc_eval_feas_day(vector<double> &globalPlan, vector<double> &nutriment_per_day, set<int> &daysInConflict, pair<int, bool> &heaviestNut, vector<int> &original, vector<int>&current, int current_day)
-{
-    int num_nutr = (int)MPP_problem->v_constraints.size();
-    vector<constraint_nutrient> &v_constraints = (MPP_problem->v_constraints);
-    double unfeasibility_next  = 0.0;
-  //  double heaviestValue = 0;
-  //  heaviestT= false;
-   for(unsigned int i = 0; i < num_nutr; i++)
-   {
-    for(int j = 0; j < N_OPT_DAY; j++)
-    {
-	int original_opt = original[current_day*N_OPT_DAY+j];
-	int current_opt = current[current_day*N_OPT_DAY+j];
-	double diff = (-MPP_problem->v_times_dishes[j][original_opt].v_nutrient_value[i] + MPP_problem->v_times_dishes[j][current_opt].v_nutrient_value[i]);
-        nutriment_per_day[j] += diff;
-	globalPlan[j] += diff;
-    }
-   }
-    //min, max values....
-    for(unsigned int i = 0; i < num_nutr; i++)
-    {
-	double minv = v_constraints[i].min, maxv = v_constraints[i].max;
-	if( v_constraints[i].type == DIARIA)
-	{
-	   if(nutriment_per_day[i] < minv)
-	   {
-	      unfeasibility_next += pow((minv - nutriment_per_day[i])/minv, 2.0)*1.0e6;
-	     // daysInConflict.insert(i);
-	   }
-	   if (nutriment_per_day[i] > maxv)
-	   {
-	      unfeasibility_next += pow((nutriment_per_day[i] - maxv)/maxv, 2.0)*1.0e6;
-	      //daysInConflict.insert(i);
-	   }
-	}
-	else if( v_constraints[i].type == GLOBAL)
-	{
-	  if(globalPlan[i] < minv)
-	  {
-       	     double v = pow((minv - globalPlan[i])/minv, 2.0);//pow((ingR[i] * minReq[i] * nDias - infoNPlan[i]) / (ingR[i] * nDias), 2);
-       	     unfeasibility_next += v;
-       	     //if(v > heaviestValue) heaviestValue = v, idx_heaviestNut = *index, heaviestT = false;
-          } 
-          if(globalPlan[i] > maxv)
-	  {
-       	     double v = pow( (globalPlan[i] - maxv)/maxv, 2.0);//pow((infoNPlan[i] - ingR[i] * maxReq[i] * nDias) / (ingR[i] * nDias), 2);
-       	     unfeasibility_next += v;
-       	     //if(v > heaviestValue)heaviestValue = v, idx_heaviestNut = *index, heaviestT = true;
-          }
-	}
-   } 
-   for(unsigned int i = 0; i < num_nutr; i++)
-   {
-    for(int j = 0; j < N_OPT_DAY; j++)
-    {
-	int original_opt = original[current_day*N_OPT_DAY+j];
-	int current_opt = current[current_day*N_OPT_DAY+j];
-	double diff = (MPP_problem->v_times_dishes[j][original_opt].v_nutrient_value[i] - MPP_problem->v_times_dishes[j][current_opt].v_nutrient_value[i]);
-        nutriment_per_day[j] += diff;
-	globalPlan[j] += diff;
-    }
-   }
-  return unfeasibility_next;
 }

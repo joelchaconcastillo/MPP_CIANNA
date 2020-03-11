@@ -9,8 +9,6 @@ using namespace std;
 #define CATEGORY_1 1
 #define CATEGORY_2 2
 #define CATEGORY_BOTH 0
-#define GLOBAL 1
-#define DIARIA 2
 
 //encoded times by each day of the individual
 #define N_OPT_DAY 8
@@ -52,8 +50,7 @@ struct infoDishes {
 struct constraint_nutrient
 {
    double min, max;
-   string name;
-   int type;
+   string type, name;
 };
 class MPP_Problem{
 	public:
@@ -109,11 +106,6 @@ class MPP{
 
 	private:
 		void calculateFeasibilityDegree();
-
-		void init_incremental_evaluation(vector<double> &globalPlan, double &unfeasibility_value, vector<double> &nutriment_per_day, vector<int> &sol, set<int> &daysInConflict, pair<int, bool> &heaviestNut );
-
-		double inc_eval_feas_time(vector<double> &globalPlan, vector<double> &nutriment_per_day, set<int> &daysInConflict, pair<int, bool> &heaviestNut, pair<int, int> &current, pair<int, int> &next);
-		double inc_eval_feas_day(vector<double> &globalPlan, vector<double> &nutriment_per_day, set<int> &daysInConflict, pair<int, bool> &heaviestNut, vector<int> &original, vector<int> &current, int day);
 
 		int heaviestNut, heaviestType;
 		double valorFac, variabilidadObj;//factibility and variability of the current solution..
