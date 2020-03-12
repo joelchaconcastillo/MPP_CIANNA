@@ -109,6 +109,7 @@ class MPP{
 
 	private:
 		void calculateFeasibilityDegree();
+		void my_next_permutation(vector<int> &perm, vector<int> &v_max_opt);
 
 		void init_incremental_evaluation(vector<double> &globalPlan, double &unfeasibility_value, vector<double> &nutriment_per_day, vector<int> &sol, set<int> &daysInConflict, pair<int, bool> &heaviestNut );
 

@@ -626,96 +626,79 @@ void MPP::exportcsv()
 
 void MPP::full_search()
 {
+omp_set_num_threads(1);
  vector< vector<int> > feasible_solutions;
  vector<pair<double, double > > fit_sol;
- fill(x_var.begin(), x_var.end(),0);
  long int cont = 0, max_perm =1;
-   for(int max_opt = 0; max_opt < N_OPT_DAY; max_opt++)max_perm *= (int)MPP_problem->v_times_dishes[max_opt].size();
+ //information to get each permutation of the options-feasible space..
+ fill(x_var.begin(), x_var.end(),0);
+ vector<int> v_max_opt;
+ for(int max_opt = 0; max_opt < N_OPT_DAY; max_opt++)
+ {
+   int opt_s = (int)MPP_problem->v_times_dishes[max_opt].size();
+   max_perm *= opt_s;
+   v_max_opt.push_back(opt_s);
+ }
  
  cout << max_perm<<endl;
- // max_perm = pow(6, N_OPT_DAY);
  evaluate();
  pair< double, double> bestResult = make_pair(valorFac, variabilidadObj);
  vector<int> x_best = x_var;
  vector<vector<infoDishes> > times = MPP_problem->v_times_dishes;
- int day = 0;
- 
- vector<vector<int> > neighbour;
 
-exit(0);
- for(long cont = 0; cont < max_perm; cont++)
+ int num_nutr = (int)MPP_problem->v_constraints.size();
+ vector<constraint_nutrient> &v_constraints = (MPP_problem->v_constraints);
+ for(long cont = 0; cont < max_perm; )
  {
-  neighbour.push_back(x_var);
- }
-// while(cont++ < max_perm*0.001)
-// #pragma omp parallel for shared(x_var)
- for(long cont = 0; cont < max_perm; cont++)
- {
-
-   if( (cont % (long)1e8 )== 0)
+   vector<vector<int>> parallel_x_var;
+   for(long i = 0; i < (long)1e8 && cont < max_perm; i++, cont++) 
    {
-     cout << "========\n " << (double)cont/(double)max_perm<<endl;
-        cout << bestResult.first << " " <<bestResult.second<< " " <<cont<<endl;
+	parallel_x_var.push_back(x_var);
+       if(cont > 0 ) my_next_permutation(x_var, v_max_opt);
    }
-//   evaluate();
-//////
-//////
-//////   //calculateFeasibilityDegree();
-//////
-//////  //  double valorFac = 0.0;
-//////    int num_nutr = (int)MPP_problem->v_constraints.size();
-//////    vector<constraint_nutrient> &v_constraints = (MPP_problem->v_constraints);
-//////
-//////		vector<double> dayNutr(num_nutr, 0);
-//////		for(unsigned int j = 0; j < num_nutr; j++){
-//////			for(unsigned int k = 0; k < N_OPT_DAY; k++)
-//////		 	   //dayNutr[j] += MPP_problem->v_times_dishes[k][x_var[x+k]].v_nutrient_value[j];
-//////		 	   dayNutr[j] += times[k][x_var[0]].v_nutrient_value[j];
-//////		}
-//////	//	for (int j = 0; j < (int)MPP_problem->v_constraint_day.size(); j++){
-//////	//		int index = MPP_problem->v_constraint_day[j];
-//////	//		double minv = v_constraints[index].min, maxv = v_constraints[index].max;
-//////	//		if(dayNutr[index] < minv){
-//////	//			
-//////	//			double vv = ((minv - dayNutr[index])/minv);
-//////	//			valorFac += vv*vv*1.0e6;
-//////	//		}
-//////	//		 if (dayNutr[index] > maxv){
-//////	//			double vv = ((dayNutr[index] - maxv)/maxv);
-//////	//			valorFac +=vv*vv*1.0e6;
-//////	//		}
-//////	//	}
-//////   double current = valorFac;
-//////   if( current < bestResult.first)
-//////   {
-////////	evaluate();
-//////	bestResult.first = current;
-//////	bestResult.second = variabilidadObj;
-//////	x_best = x_var;		
-//////        cout << bestResult.first << " " <<bestResult.second<< " " <<cont<<endl;
-//////   }
-//////   if( current <= 1e-9) //feasible solution
-//////   {
-////////	evaluate();
-//////	feasible_solutions.push_back(x_var);
-//////        fit_sol.push_back(make_pair(valorFac, variabilidadObj));
-//////   }
-//////
-//////   x_var[0]++;
-//////   for(int max_opt = 0; max_opt < N_OPT_DAY; max_opt++)
-//////   {
-//////      if(x_var[max_opt] >= MPP_problem->v_times_dishes[max_opt].size())
-//////      {
-//////	x_var[max_opt] = 0;
-//////	if(max_opt+1 < N_OPT_DAY)
-//////        x_var[max_opt+1]++;
-//////      }
-//////   }
+   int day_constraints = (int)MPP_problem->v_constraint_day.size();
+   #pragma omp parallel for shared(bestResult, x_best, feasible_solutions, fit_sol)
+   for(long i = 0; i < parallel_x_var.size(); i++)
+   { 
+       double valorFac = 0.0;
+        for (int j = 0; j < day_constraints; j++)
+        {
+          double accum_nut = 0.0;
+          int index = MPP_problem->v_constraint_day[j];
+           for(unsigned int k = 0; k < N_OPT_DAY; k++)
+                 accum_nut += MPP_problem->v_times_dishes[k][parallel_x_var[i][k]].v_nutrient_value[index];
+           double minv = v_constraints[index].min, maxv = v_constraints[index].max;
+           valorFac += (accum_nut < minv)?((minv - accum_nut)/minv)*((minv - accum_nut)/minv)*1.0e6:0;
+           valorFac += (accum_nut > maxv)?((accum_nut - maxv)/maxv)*((accum_nut - maxv)/maxv)*1.0e6:0;
+           if(valorFac > bestResult.first) break; //first optimization..
+        }
+      double current = valorFac;
+      if( current < bestResult.first)
+      {
+//           evaluate();
+           bestResult.first = current;
+   //        bestResult.second = variabilidadObj;
+           x_best = parallel_x_var[i];		
+           cout << bestResult.first << " " <<bestResult.second<< " " <<cont<<endl;
+      }
+      if( current <= 1e-9) //feasible solution
+      {
+    //       evaluate();
+           feasible_solutions.push_back(parallel_x_var[i]);
+           fit_sol.push_back(make_pair(valorFac, variabilidadObj));
+      }
+   }
+      if( (cont % (long)1e8 )== 0)
+      {
+        cout << "========\n " << (double)cont/(double)max_perm<<endl;
+           cout << bestResult.first << " " <<bestResult.second<< " " <<cont<<endl;
+      }
+
  }
  if(feasible_solutions.empty()) 
   {
     feasible_solutions.push_back(x_best);
-     fit_sol.push_back(bestResult);
+    fit_sol.push_back(bestResult);
   }
   
    cout << bestResult.first << " " <<bestResult.second<<endl;
@@ -725,7 +708,9 @@ exit(0);
  ///exporting solutions....
  for(int i = 0; i < feasible_solutions.size(); i++)
  {
-    ofs << fit_sol[i].first << " , "<< fit_sol[i].second<< " , ";
+    x_var=feasible_solutions[i];
+    evaluate();
+    ofs << this->valorFac << " , "<< this->variabilidadObj<< " , ";
     for(int j = 0; j < feasible_solutions[i].size(); j++)
     {
 	for(int j = 0; j < N_OPT_DAY; j++) ofs<< " , "<<MPP_problem->v_times_dishes[j][x_var[i*N_OPT_DAY + j]].description;
@@ -899,4 +884,18 @@ double MPP::inc_eval_feas_day(vector<double> &globalPlan, vector<double> &nutrim
     }
    }
   return unfeasibility_next;
+}
+
+void MPP::my_next_permutation(vector<int> &perm, vector<int> &v_max_opt)
+{
+      x_var[0]++;
+      for(int max_opt = 0; max_opt < (int)v_max_opt.size(); max_opt++)
+      {
+         if(x_var[max_opt] >= v_max_opt[max_opt])
+         {
+           x_var[max_opt] = 0;
+           if(max_opt+1 < (int)v_max_opt.size())
+           x_var[max_opt+1]++;
+         }
+      }
 }
