@@ -626,7 +626,7 @@ void MPP::exportcsv()
 
 void MPP::full_search()
 {
-omp_set_num_threads(1);
+omp_set_num_threads(24);
  vector< vector<int> > feasible_solutions;
  vector<pair<double, double > > fit_sol;
  long int cont = 0, max_perm =1;
