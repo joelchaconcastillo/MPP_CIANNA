@@ -648,25 +648,25 @@ omp_set_num_threads(24);
 
  int num_nutr = (int)MPP_problem->v_constraints.size();
  vector<constraint_nutrient> &v_constraints = (MPP_problem->v_constraints);
- for(long cont = 0; cont < max_perm; )
+ for(long cont = 0; cont < max_perm; cont++)
  {
-   vector<vector<int>> parallel_x_var;
-   for(long i = 0; i < (long)1e8 && cont < max_perm; i++, cont++) 
-   {
-	parallel_x_var.push_back(x_var);
        if(cont > 0 ) my_next_permutation(x_var, v_max_opt);
-   }
+  // vector<vector<int>> parallel_x_var;
+  // for(long i = 0; i < (long)1e8 && cont < max_perm; i++, cont++) 
+  // {
+  //      parallel_x_var.push_back(x_var);
+  // }
    int day_constraints = (int)MPP_problem->v_constraint_day.size();
-   #pragma omp parallel for shared(bestResult, x_best, feasible_solutions, fit_sol)
-   for(long i = 0; i < parallel_x_var.size(); i++)
-   { 
+ //  #pragma omp parallel for shared(bestResult, x_best, feasible_solutions, fit_sol)
+   //for(long i = 0; i < parallel_x_var.size(); i++)
+   //{ 
        double valorFac = 0.0;
         for (int j = 0; j < day_constraints; j++)
         {
           double accum_nut = 0.0;
           int index = MPP_problem->v_constraint_day[j];
            for(unsigned int k = 0; k < N_OPT_DAY; k++)
-                 accum_nut += MPP_problem->v_times_dishes[k][parallel_x_var[i][k]].v_nutrient_value[index];
+                 accum_nut += MPP_problem->v_times_dishes[k][x_var[k]].v_nutrient_value[index];
            double minv = v_constraints[index].min, maxv = v_constraints[index].max;
            valorFac += (accum_nut < minv)?((minv - accum_nut)/minv)*((minv - accum_nut)/minv)*1.0e6:0;
            valorFac += (accum_nut > maxv)?((accum_nut - maxv)/maxv)*((accum_nut - maxv)/maxv)*1.0e6:0;
@@ -678,16 +678,16 @@ omp_set_num_threads(24);
 //           evaluate();
            bestResult.first = current;
    //        bestResult.second = variabilidadObj;
-           x_best = parallel_x_var[i];		
+           x_best = x_var;		
            cout << bestResult.first << " " <<bestResult.second<< " " <<cont<<endl;
       }
       if( current <= 1e-9) //feasible solution
       {
     //       evaluate();
-           feasible_solutions.push_back(parallel_x_var[i]);
+           feasible_solutions.push_back(x_var);
            fit_sol.push_back(make_pair(valorFac, variabilidadObj));
       }
-   }
+  // }
       if( (cont % (long)1e8 )== 0)
       {
         cout << "========\n " << (double)cont/(double)max_perm<<endl;
