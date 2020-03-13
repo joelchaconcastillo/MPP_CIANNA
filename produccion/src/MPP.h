@@ -42,6 +42,11 @@ using namespace std;
 extern int crossoverType;
 extern int nDias;
 void printBest();
+struct Neighbor {
+	int variable;
+	int newValue;
+};
+
 struct infoDishes {
         int description;	
 	string time_day; //time related with the dish
@@ -91,6 +96,8 @@ class MPP{
 		void uniform2Crossover(MPP &i2);
 		void pairBasedCrossover(MPP &i2);
 		void localSearch();
+		void First_Improvement_Hill_Climbing(Neighbor &neighbors);
+
 		int getDistance(MPP &ind2); 
 		void full_search();
 		double inline getMaximum(const int i) const { cerr << "ErrorL llama a getMaximum" << endl; exit(-1); return 0; }
@@ -111,10 +118,9 @@ class MPP{
 		void calculateFeasibilityDegree();
 		void my_next_permutation(vector<int> &perm, vector<int> &v_max_opt);
 
-		void init_incremental_evaluation(vector<double> &globalPlan, double &unfeasibility_value, vector<double> &nutriment_per_day, vector<int> &sol, set<int> &daysInConflict, pair<int, bool> &heaviestNut );
+		void init_incremental_evaluation(vector<double> &globalPlan, vector< vector<double> > &nutriment_per_day, vector<int> &sol);
 
-		double inc_eval_feas_time(vector<double> &globalPlan, vector<double> &nutriment_per_day, set<int> &daysInConflict, pair<int, bool> &heaviestNut, pair<int, int> &current, pair<int, int> &next);
-		double inc_eval_feas_day(vector<double> &globalPlan, vector<double> &nutriment_per_day, set<int> &daysInConflict, pair<int, bool> &heaviestNut, vector<int> &original, vector<int> &current, int day);
+		double inc_eval_feas_time(vector<double> &globalPlan, vector<double> &nutriment_per_day, Neighbor &neighbors);
 
 		int heaviestNut, heaviestType;
 		double valorFac, variabilidadObj;//factibility and variability of the current solution..
