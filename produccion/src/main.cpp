@@ -23,11 +23,12 @@ int main(int argc, char **argv){
         STP.load_data(argc, argv);
 	MPP::MPP_problem = &STP;
         //everithing seem's to be OK, thus starting the algorithm...
-	//MA ma(N, pc, pm, finalTime);
+	MA ma(N, pc, pm, finalTime);
  	
-	ExtendedIndividual *ei = new ExtendedIndividual();
-	ei->ind.init();
-	ei->ind.full_search();
-	//ma.run();
+	ma.run();
+
+//	ExtendedIndividual *ei = new ExtendedIndividual();
+//	ei->ind.init();
+//	ei->ind.full_search();
 
 }

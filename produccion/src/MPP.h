@@ -50,7 +50,7 @@ struct Neighbor {
 struct infoDishes {
         int description;	
 	string time_day; //time related with the dish
-	vector<double> v_nutrient_value;    //nutriments meta-data...
+	vector<double> v_nutrient_value;    //nutriments meta-data...those indexes should be in the same order than the v_contraints vector...
 	int category; //category, at this point is 1 or 2
 	bool favorite; //true if this is a favorite dish...
 };
@@ -96,7 +96,7 @@ class MPP{
 		void uniform2Crossover(MPP &i2);
 		void pairBasedCrossover(MPP &i2);
 		void localSearch();
-		void First_Improvement_Hill_Climbing(Neighbor &neighbors);
+		pair<double, double> First_Improvement_Hill_Climbing(vector<Neighbor> &neighbors, vector<int> &current_sol);
 
 		int getDistance(MPP &ind2); 
 		void full_search();
@@ -118,9 +118,12 @@ class MPP{
 		void calculateFeasibilityDegree();
 		void my_next_permutation(vector<int> &perm, vector<int> &v_max_opt);
 
-		void init_incremental_evaluation(vector<double> &globalPlan, vector< vector<double> > &nutriment_per_day, vector<int> &sol);
+		double init_incremental_evaluation(vector<double> &globalPlan, vector< vector<double> > &nutriment_per_day, vector<int> &sol);
+		double inc_eval_feas_time(vector<double> &globalPlan, vector<vector<double> > &nutriment_per_day, vector<int> &current_sol, Neighbor &new_neighbor);
 
-		double inc_eval_feas_time(vector<double> &globalPlan, vector<double> &nutriment_per_day, Neighbor &neighbors);
+		void update_data_incremental_eval(vector<double> &globalPlan, vector<vector<double> > &nutriment_per_day, vector<int> &current_sol, Neighbor &new_neighbor);
+
+		double calculateVariability(vector<int> &current_sol, Neighbor &new_neighbor);
 
 		int heaviestNut, heaviestType;
 		double valorFac, variabilidadObj;//factibility and variability of the current solution..

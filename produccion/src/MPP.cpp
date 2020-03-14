@@ -489,13 +489,14 @@ void MPP::localSearch( ) {
 		}
 	}
 	vector<int> bestIndividual = x_var;
-	//cout <<"entra..."<<valorFac<<endl;
 	evaluate();
+	cout <<"entra..."<<valorFac<<endl;
 	pair<double, double> bestResult = make_pair(valorFac, -variabilidadObj);
 
-	for (int i = 0; i < 1000; i++){
-		First_Improvement_Hill_Climbing(neighbors, x_var);
+	for (int i = 0; i < 100000; i++){
+		pair<double, double> currentResult = First_Improvement_Hill_Climbing(neighbors, x_var);
 		evaluate();//evaluate x_var..
+		cout << currentResult.first<< "----" << valorFac  <<endl;
 
 		if (currentResult >= bestResult){
 			x_var = bestIndividual;
@@ -699,76 +700,102 @@ omp_set_num_threads(24);
     ofs.close();
  }
 }
-
-
-void MPP::init_incremental_evaluation(vector<double> &globalPlan, vector< vector<double> > &nutriment_per_day, vector<int> &sol)
+double MPP::init_incremental_evaluation(vector<double> &globalPlan, vector< vector<double> > &nutriment_per_day, vector<int> &sol)
 {
 	int num_nutr = (int)MPP_problem->v_constraints.size();
 	vector<constraint_nutrient> &v_constraints = (MPP_problem->v_constraints);
+        vector<int> &v_constraint_global = MPP_problem->v_constraint_global, &v_constraint_day = MPP_problem->v_constraint_day;
         globalPlan.assign(num_nutr, 0.0);
 	nutriment_per_day.assign(nDias, vector<double> (num_nutr, 0));
-	for(int i = 0; i < nDias; i++)
+        double unfeasibility_next  = 0.0;
+	for(int j = 0; j < num_nutr; j++)
 	{
-	   for(int j = 0; j < num_nutr; j++)
+	   for(int i = 0; i < nDias; i++)
 	   {
 	   	for(int k = 0; k < N_OPT_DAY; k++)
 	    	   nutriment_per_day[i][j] += MPP_problem->v_times_dishes[k][sol[i*N_OPT_DAY + k]].v_nutrient_value[j];
-	   	globalPlan[j] += nutriment_per_day[j]; 
+	        globalPlan[j] += nutriment_per_day[i][j]; 
+		for(int j = 0; j < v_constraint_day.size(); j++)
+           	{
+       		   int index = v_constraint_day[j];
+                   double minv = v_constraints[index].min;
+                   double maxv = v_constraints[index].max;
+	           double nut = nutriment_per_day[i][index];
+	           if( nut < minv) unfeasibility_next+= ((minv - nut)/minv)*((minv - nut)/minv)*1.0e6;
+	           else if (nut > maxv) unfeasibility_next+=((nut - maxv)/maxv)*((nut - maxv)/maxv)*1.0e6;
+                }
 	   }
 	}
+     for (int j = 0; j < v_constraint_global.size(); j++)
+     {
+       int index = v_constraint_global[j];
+       double minv = v_constraints[index].min;
+       double maxv = v_constraints[index].max;
+       double nut = globalPlan[j];
+       if(nut < minv) unfeasibility_next += ((minv - nut)/minv)*((minv - nut)/minv);
+       else if (nut > maxv) unfeasibility_next +=((nut - maxv)/maxv)*((nut - maxv)/maxv);
+     }
+   return unfeasibility_next;
 }
-double MPP::inc_eval_feas_time(vector<double> &globalPlan, vector<vector<double> > &nutriment_per_day, Neighbor &neighbors);
+double MPP::inc_eval_feas_time(vector<double> &globalPlan, vector<vector<double> > &nutriment_per_day, vector<int> &current_sol, Neighbor &new_neighbor)
 {
     int num_nutr = (int)MPP_problem->v_constraints.size();
     vector<constraint_nutrient> &v_constraints = (MPP_problem->v_constraints);
+    vector<int> &v_constraint_global = MPP_problem->v_constraint_global, &v_constraint_day = MPP_problem->v_constraint_day;
+    vector<vector<infoDishes> > &v_times_dishes = (MPP_problem->v_times_dishes);
+    int day =  new_neighbor.variable/N_OPT_DAY;
+    int time = new_neighbor.variable%N_OPT_DAY;
     double unfeasibility_next  = 0.0;
-  //  double heaviestValue = 0;
-  //  heaviestT= false;
-    for(unsigned int j = 0; j < num_nutr; j++)
+    for(unsigned int j = 0; j < num_nutr; j++)//check new neighbor..
     {
-	double diff = (-MPP_problem->v_times_dishes[current.first][current.second].v_nutrient_value[j] + MPP_problem->v_times_dishes[next.first][next.second].v_nutrient_value[j]);
-        nutriment_per_day[j] += diff;
-	globalPlan[j] += diff;
-
-	double minv = v_constraints[j].min, maxv = v_constraints[j].max;
-	if( v_constraints[j].type == DIARIA)
-	{
-	   if(nutriment_per_day[j] < minv)
-	   {
-	      unfeasibility_next += pow((minv - nutriment_per_day[j])/minv, 2.0)*1.0e6;
-	     // daysInConflict.insert(i);
-	   }
-	   if (nutriment_per_day[j] > maxv)
-	   {
-	      unfeasibility_next += pow((nutriment_per_day[j] - maxv)/maxv, 2.0)*1.0e6;
-	      //daysInConflict.insert(i);
-	   }
-	}
-	else if( v_constraints[j].type == GLOBAL)
-	{
-	  if(globalPlan[j] < minv)
-	  {
-       	     double v = pow((minv - globalPlan[j])/minv, 2.0);//pow((ingR[i] * minReq[i] * nDias - infoNPlan[i]) / (ingR[i] * nDias), 2);
-       	     unfeasibility_next += v;
-       	     //if(v > heaviestValue) heaviestValue = v, idx_heaviestNut = *index, heaviestT = false;
-          } 
-          if(globalPlan[j] > maxv)
-	  {
-       	     double v = pow( (globalPlan[j] - maxv)/maxv, 2.0);//pow((infoNPlan[i] - ingR[i] * maxReq[i] * nDias) / (ingR[i] * nDias), 2);
-       	     unfeasibility_next += v;
-       	     //if(v > heaviestValue)heaviestValue = v, idx_heaviestNut = *index, heaviestT = true;
-          }
-	}
-    }  
-    for(unsigned int j = 0; j < num_nutr; j++) //get back values...
+       	//update sumatory of nutriments....
+	double diff = (-v_times_dishes[time][current_sol[new_neighbor.variable]].v_nutrient_value[j] + v_times_dishes[time][new_neighbor.newValue].v_nutrient_value[j]);
+        nutriment_per_day[day][j] += diff;
+//	globalPlan[j] += diff;
+    }
+    for (int j = 0; j < v_constraint_day.size(); j++)
     {
-	double diff = (MPP_problem->v_times_dishes[current.first][current.second].v_nutrient_value[j] - MPP_problem->v_times_dishes[next.first][next.second].v_nutrient_value[j]);
-        nutriment_per_day[j] += diff;
+       int index = v_constraint_day[j];
+       double minv = v_constraints[index].min;
+       double maxv = v_constraints[index].max;
+	double nut = nutriment_per_day[day][index];
+	if( nut < minv) unfeasibility_next+= ((minv - nut)/minv)*((minv - nut)/minv)*1.0e6;
+	else if (nut > maxv) unfeasibility_next+=((nut - maxv)/maxv)*((nut - maxv)/maxv)*1.0e6;
+    }
+    for (int j = 0; j < v_constraint_global.size(); j++)
+    {
+       int index = v_constraint_global[j];
+       double minv = v_constraints[index].min;
+       double maxv = v_constraints[index].max;
+       double nut = globalPlan[j];
+	if(nut < minv) unfeasibility_next += ((minv - nut)/minv)*((minv - nut)/minv);
+	else if (nut > maxv) unfeasibility_next +=((nut - maxv)/maxv)*((nut - maxv)/maxv);
+    }
+    for(unsigned int j = 0; j < num_nutr; j++)//restore values..
+    {
+	//update sumatory of nutriments....
+	double diff = (v_times_dishes[time][current_sol[new_neighbor.variable]].v_nutrient_value[j] - v_times_dishes[time][new_neighbor.newValue].v_nutrient_value[j]);
+        nutriment_per_day[day][j] += diff;
 	globalPlan[j] += diff;
     }
+   
   return unfeasibility_next;
 }
-
+void MPP::update_data_incremental_eval(vector<double> &globalPlan, vector<vector<double> > &nutriment_per_day, vector<int> &current_sol, Neighbor &new_neighbor)
+{
+    int num_nutr = (int)MPP_problem->v_constraints.size();
+    vector<vector<infoDishes> > &v_times_dishes = (MPP_problem->v_times_dishes);
+    int day =  new_neighbor.variable/N_OPT_DAY;
+    int time = new_neighbor.variable%N_OPT_DAY;
+    for(unsigned int j = 0; j < num_nutr; j++)//check new neighbor..
+    {
+       	//update sumatory of nutriments....
+	double diff = (-v_times_dishes[time][current_sol[new_neighbor.variable]].v_nutrient_value[j] + v_times_dishes[time][new_neighbor.newValue].v_nutrient_value[j]);
+        nutriment_per_day[day][j] += diff;
+	globalPlan[j] += diff;
+    }
+    current_sol[new_neighbor.variable]=new_neighbor.newValue;
+}
 void MPP::my_next_permutation(vector<int> &perm, vector<int> &v_max_opt)
 {
       x_var[0]++;
@@ -782,12 +809,21 @@ void MPP::my_next_permutation(vector<int> &perm, vector<int> &v_max_opt)
          }
       }
 }
-void First_Improvement_Hill_Climbing(Neighbor &neighbors, vector<int> &current_sol)
+double MPP::calculateVariability(vector<int> &current_sol, Neighbor &new_neighbor)
+{
+ return 0;
+}
+pair<double, double> MPP::First_Improvement_Hill_Climbing(vector<Neighbor> &neighbors, vector<int> &current_sol)
 {
    vector<double> globalPlan;
    vector< vector<double> > nutriment_per_day;
 
-   init_incremental_evaluation(globalPlan, nutriment_per_day, current_sol);
+   double current_infeasibility = init_incremental_evaluation(globalPlan, nutriment_per_day, current_sol);
+   evaluate();
+	cout << current_infeasibility << "**"<< valorFac<<endl;
+
+//inc_eval_feas_time(globalPlan, nutriment_per_day, current_sol, tmp);//just get the current unfeasibility degree..
+   double current_variability = 0;//calculateVariability(current_sol, tmp);
    bool improved = true;
    while(improved)
    {
@@ -796,25 +832,33 @@ void First_Improvement_Hill_Climbing(Neighbor &neighbors, vector<int> &current_s
      for (int i = 0; i < neighbors.size(); i++)
      {
         //incremental evaluation...
-	Neighbor n_current{neighbors[i].variable, current_sol[neighbors[i].variable]};
-	double deltaCurrent= inc_eval_feas_time(globalPlan, nutriment_per_day, n_current);
-        double deltanewResult = inc_eval_feas_time(globalPlan, nutriment_per_day, neighbors[i]);
-	if( deltaCurrent > deltanewResult )
+	double new_infeasibility = inc_eval_feas_time(globalPlan, nutriment_per_day, current_sol, neighbors[i]);
+//	int old =x_var[neighbors[i].variable];
+//	x_var[neighbors[i].variable] = neighbors[i].newValue;
+//        evaluate();
+//x_var[neighbors[i].variable]=old;
+//	cout << new_infeasibility<< "::::: "<<valorFac<<endl;
+
+//	cout << current_infeasibility << "__ "<<new_infeasibility <<endl;
+	if( new_infeasibility < current_infeasibility)
 	{
 	   improved = true;
-	   current_sol[neighbors[i].variable] = neighbors[i].newValue;
+	   update_data_incremental_eval(globalPlan, nutriment_per_day, current_sol, neighbors[i]);
+	   //current_sol[neighbors[i].variable] = neighbors[i].newValue;
+	   current_infeasibility = new_infeasibility;
 	}
-	else if(deltaCurrent == deltanewResult) //to check: epsilon...
-        {
-            double delta_var_current = calculateVariability(current_sol, n_current);
-	    double delta_var_newResult = calculateVariability(current_sol, neighbors[i]);
+	else if(new_infeasibility == current_infeasibility) //to check: epsilon...
+        { 
+	    double new_variability = calculateVariability(current_sol, neighbors[i]);
 	   //get variability of the solution..
-           if( delta_var_current < delta_var_newResult)
+	   if(current_variability < new_variability)
 	   {	
 	      improved = true;
+	      current_variability = new_variability;
 	      current_sol[neighbors[i].variable] = neighbors[i].newValue;
 	   }
         }
       }
     }
+    return make_pair(current_infeasibility, current_variability);
 }
