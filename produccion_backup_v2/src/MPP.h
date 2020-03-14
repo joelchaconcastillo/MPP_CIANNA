@@ -13,13 +13,15 @@ using namespace std;
 #define DIARIA 2
 
 //encoded times by each day of the individual
-#define N_OPT_DAY 6
+#define N_OPT_DAY 8
 #define BREAKFAST 0
 #define MORNING_SNACK 1
-#define STARTER 2
-#define MAIN_COURSE 3
-#define EVENING_SNACK 4
-#define DINNER 5
+#define STARTER_1 2
+#define STARTER_2 3
+#define MAIN_COURSE_1 4
+#define MAIN_COURSE_2 5
+#define EVENING_SNACK 6
+#define DINNER 7
 
 //#define N_FOODS_DAY 6
 ////Options of the v_times_dishes..
@@ -69,6 +71,7 @@ class MPP_Problem{
 		void load_dishes(char *Constraints_file);
 		inline int random_dish(int time_dish){return rand()%((int)v_times_dishes[time_dish].size());}
 
+//		vector<infoDishes> v_dishes;
 		vector<vector<infoDishes> > v_times_dishes;  // the same as ->  vector<int> v_breakfast, v_morning_snack, v_starter, v_main_course, v_evening_snack, v_dinner;
 		vector<constraint_nutrient> v_constraints;
 		unordered_map<string, int> dic_nut_id;
@@ -97,6 +100,9 @@ class MPP{
 
 		int getDistance(MPP &ind2); 
 		void full_search();
+		double inline getMaximum(const int i) const { cerr << "ErrorL llama a getMaximum" << endl; exit(-1); return 0; }
+		double inline getMinimum(const int i) const { cerr << "Error: llama a getMinimum" << endl; exit(-1); return 0; }
+		//unsigned int inline getOptDirection(const int i) const { return MAXIMIZE; }
 		void exportcsv();
 		virtual void print(ostream &os) const;
 
@@ -119,7 +125,6 @@ class MPP{
 
 		double calculateVariability(vector<int> &current_sol, Neighbor &new_neighbor);
 
-		double calculateVariability();
 		int heaviestNut, heaviestType;
 		double valorFac, variabilidadObj;//factibility and variability of the current solution..
 		set<int> badDays;

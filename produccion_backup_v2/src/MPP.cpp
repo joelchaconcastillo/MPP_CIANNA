@@ -92,22 +92,20 @@ void MPP_Problem::load_dishes(char *c_filename)
 		
 	       if(str_dish.time_day == "DESAYUNO") v_times_dishes[BREAKFAST].push_back(str_dish);
 	       else if(str_dish.time_day == "COLACION_MATUTINA") v_times_dishes[MORNING_SNACK].push_back(str_dish);
-	       else if(str_dish.time_day == "COMIDA_ENTRADA") v_times_dishes[STARTER].push_back(str_dish);
-///	       else if(str_dish.time_day == "COMIDA_ENTRADA" && str_dish.category == CATEGORY_1) v_times_dishes[STARTER_1].push_back(str_dish);
-///	       else if(str_dish.time_day == "COMIDA_ENTRADA" && str_dish.category == CATEGORY_2) v_times_dishes[STARTER_2].push_back(str_dish);
-///	       else if(str_dish.time_day == "COMIDA_ENTRADA" && str_dish.category == CATEGORY_BOTH) //this dish blong to both categories...
-///		{
-///		 v_times_dishes[STARTER_1].push_back(str_dish);
-///		 v_times_dishes[STARTER_2].push_back(str_dish);
-///		}
-	       else if(str_dish.time_day == "COMIDA_PRINCIPAL") v_times_dishes[MAIN_COURSE].push_back(str_dish);
-//	       else if(str_dish.time_day == "COMIDA_PRINCIPAL" && str_dish.category == CATEGORY_1) v_times_dishes[MAIN_COURSE_1].push_back(str_dish);
-//	       else if(str_dish.time_day == "COMIDA_PRINCIPAL" && str_dish.category == CATEGORY_2) v_times_dishes[MAIN_COURSE_2].push_back(str_dish);
-//	       else if(str_dish.time_day == "COMIDA_PRINCIPAL" && str_dish.category == CATEGORY_BOTH) //both categories..
-//		{
-//		  v_times_dishes[MAIN_COURSE_1].push_back(str_dish);
-//		  v_times_dishes[MAIN_COURSE_2].push_back(str_dish);
-//		}
+	       else if(str_dish.time_day == "COMIDA_ENTRADA" && str_dish.category == CATEGORY_1) v_times_dishes[STARTER_1].push_back(str_dish);
+	       else if(str_dish.time_day == "COMIDA_ENTRADA" && str_dish.category == CATEGORY_2) v_times_dishes[STARTER_2].push_back(str_dish);
+	       else if(str_dish.time_day == "COMIDA_ENTRADA" && str_dish.category == CATEGORY_BOTH) //this dish blong to both categories...
+		{
+		 v_times_dishes[STARTER_1].push_back(str_dish);
+		 v_times_dishes[STARTER_2].push_back(str_dish);
+		}
+	       else if(str_dish.time_day == "COMIDA_PRINCIPAL" && str_dish.category == CATEGORY_1) v_times_dishes[MAIN_COURSE_1].push_back(str_dish);
+	       else if(str_dish.time_day == "COMIDA_PRINCIPAL" && str_dish.category == CATEGORY_2) v_times_dishes[MAIN_COURSE_2].push_back(str_dish);
+	       else if(str_dish.time_day == "COMIDA_PRINCIPAL" && str_dish.category == CATEGORY_BOTH) //both categories..
+		{
+		  v_times_dishes[MAIN_COURSE_1].push_back(str_dish);
+		  v_times_dishes[MAIN_COURSE_2].push_back(str_dish);
+		}
 	       else if(str_dish.time_day == "COLACION_VESPERTINA") v_times_dishes[EVENING_SNACK].push_back(str_dish);
 	       else if(str_dish.time_day == "CENA") v_times_dishes[DINNER].push_back(str_dish);
 	       else if(str_dish.time_day == "COLACION_AMBAS")
@@ -296,7 +294,7 @@ void MPP::calculateFeasibilityDegree(){
 */
 void MPP::evaluate(){
     variabilidadObj = 0.0;
-  //variabilidadObj= variability_day + pow(variability_global,2);
+  variabilidadObj= variability_day + pow(variability_global,2);
 
   calculateFeasibilityDegree();
   //fitness = 1.0/(valorFac + 1.0e4/variabilidadObj);
@@ -819,8 +817,8 @@ double MPP::calculateVariability()
 
    for(int i = 0 ; i < nDias; i++)
    {
-//       if(v_times_dishes[STARTER_1][x_var[i*N_OPT_DAY + STARTER_1]].description != v_times_dishes[STARTER_2][x_var[i*N_OPT_DAY + STARTER_2]].description ) variability_day++;
-//       if(v_times_dishes[MAIN_COURSE_1][x_var[i*N_OPT_DAY + MAIN_COURSE_1]].description != v_times_dishes[MAIN_COURSE_2][x_var[i*N_OPT_DAY + MAIN_COURSE_2]].description ) variability_day++;
+       if(v_times_dishes[STARTER_1][x_var[i*N_OPT_DAY + STARTER_1]].description != v_times_dishes[STARTER_2][x_var[i*N_OPT_DAY + STARTER_2]].description ) variability_day++;
+       if(v_times_dishes[MAIN_COURSE_1][x_var[i*N_OPT_DAY + MAIN_COURSE_1]].description != v_times_dishes[MAIN_COURSE_2][x_var[i*N_OPT_DAY + MAIN_COURSE_2]].description ) variability_day++;
        if(v_times_dishes[MORNING_SNACK][x_var[i*N_OPT_DAY + MORNING_SNACK]].description != v_times_dishes[EVENING_SNACK][x_var[i*N_OPT_DAY + EVENING_SNACK]].description ) variability_day++;
      for(int k = 0; k < N_OPT_DAY; k++)
      {
@@ -865,8 +863,8 @@ double MPP::calculateVariability(vector<int> &current_sol, Neighbor &new_neighbo
 
    for(int i = 0 ; i < nDias; i++)
    {
-       //if(v_times_dishes[STARTER_1][x_var[i*N_OPT_DAY + STARTER_1]].description != v_times_dishes[STARTER_2][x_var[i*N_OPT_DAY + STARTER_2]].description ) variability_day++;
-       //if(v_times_dishes[MAIN_COURSE_1][x_var[i*N_OPT_DAY + MAIN_COURSE_1]].description != v_times_dishes[MAIN_COURSE_2][x_var[i*N_OPT_DAY + MAIN_COURSE_2]].description ) variability_day++;
+       if(v_times_dishes[STARTER_1][x_var[i*N_OPT_DAY + STARTER_1]].description != v_times_dishes[STARTER_2][x_var[i*N_OPT_DAY + STARTER_2]].description ) variability_day++;
+       if(v_times_dishes[MAIN_COURSE_1][x_var[i*N_OPT_DAY + MAIN_COURSE_1]].description != v_times_dishes[MAIN_COURSE_2][x_var[i*N_OPT_DAY + MAIN_COURSE_2]].description ) variability_day++;
        if(v_times_dishes[MORNING_SNACK][x_var[i*N_OPT_DAY + MORNING_SNACK]].description != v_times_dishes[EVENING_SNACK][x_var[i*N_OPT_DAY + EVENING_SNACK]].description ) variability_day++;
      for(int k = 0; k < N_OPT_DAY; k++)
      {
