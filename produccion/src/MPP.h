@@ -119,7 +119,7 @@ class MPP{
 		void my_next_permutation(vector<int> &perm, vector<int> &v_max_opt);
 
 		double init_incremental_evaluation(vector<double> &globalPlan, vector< vector<double> > &nutriment_per_day, vector<int> &sol);
-		double inc_eval_feas_time(vector<double> &globalPlan, vector<vector<double> > &nutriment_per_day, vector<int> &current_sol, Neighbor &new_neighbor);
+		double inc_eval_feas_time(vector<double> &globalPlan, vector<vector<double> > &nutriment_per_day, vector<int> &current_sol, Neighbor &new_neighbor, double current_infeasibility);
 
 		void update_data_incremental_eval(vector<double> &globalPlan, vector<vector<double> > &nutriment_per_day, vector<int> &current_sol, Neighbor &new_neighbor);
 
