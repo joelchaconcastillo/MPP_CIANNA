@@ -117,7 +117,7 @@ class MPP{
 
 		void update_data_incremental_eval(vector<double> &globalPlan, vector<vector<double> > &nutriment_per_day, vector<int> &current_sol, Neighbor &new_neighbor);
 
-		double calculateVariability(vector<int> &current_sol, Neighbor &new_neighbor);
+		double calculateVariability(vector<int> &current_sol);
 
 		double calculateVariability();
 		int heaviestNut, heaviestType;

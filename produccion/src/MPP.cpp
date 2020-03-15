@@ -445,7 +445,8 @@ void MPP::localSearch( ) {
 	vector<int> bestIndividual = x_var;
 	evaluate();
 	cout <<"entra..."<<valorFac<<endl;
-	pair<double, double> bestResult = make_pair(valorFac, -variabilidadObj);
+	double currentVariability = calculateVariability(x_var);
+	pair<double, double> bestResult = make_pair(valorFac, -currentVariability);
 
 	for (int i = 0; i < 10000; i++){
 		pair<double, double> currentResult = First_Improvement_Hill_Climbing(neighbors, x_var);
@@ -455,7 +456,7 @@ void MPP::localSearch( ) {
 		} else {
 			bestResult = currentResult;
 			bestIndividual = x_var;
-			cout << currentResult.first << " " << badDays.size()<<endl;
+			cout << currentResult.first << " " << currentResult.second <<" " << badDays.size()<<endl;
 		}
 
 		evaluate();
@@ -771,7 +772,7 @@ pair<double, double> MPP::First_Improvement_Hill_Climbing(vector<Neighbor> &neig
 
    double current_infeasibility = init_incremental_evaluation(globalPlan, nutriment_per_day, current_sol);
    evaluate();
-   double current_variability = 0;//calculateVariability(current_sol, tmp);
+   double current_variability = calculateVariability(current_sol);
    bool improved = true;
    while(improved)
    {
@@ -790,7 +791,8 @@ pair<double, double> MPP::First_Improvement_Hill_Climbing(vector<Neighbor> &neig
 	}
 	else if(new_infeasibility == current_infeasibility) //to check: epsilon...
         { 
-	    double new_variability = calculateVariability(current_sol, neighbors[i]);
+	    //double new_variability = calculateVariability(current_sol, neighbors[i]);
+	    double new_variability = calculateVariability(current_sol);
 	   if(current_variability < new_variability)
 	   {	
 	      improved = true;
@@ -848,7 +850,7 @@ double MPP::calculateVariability()
 
  return 0;
 }
-double MPP::calculateVariability(vector<int> &current_sol, Neighbor &new_neighbor)
+double MPP::calculateVariability(vector<int> &current_sol)
 {
     vector<vector<infoDishes> > &v_times_dishes = MPP_problem->v_times_dishes;
     double variability_day= 0.0, variability_global = 0.0;
@@ -892,5 +894,5 @@ double MPP::calculateVariability(vector<int> &current_sol, Neighbor &new_neighbo
      variability_global +=  minv_d[k][i] + cont_d[k][i];
    }
 
- return 0;
+ return variability_day + variability_global;
 }
