@@ -29,7 +29,6 @@ MPP_Problem* MPP::MPP_problem;
 MPP_Problem::MPP_Problem(){
 
 }
-
 void MPP_Problem::load_data(int argc, char **argv)
 {
     if(argc < 6)
@@ -864,12 +863,11 @@ double MPP::calculateVariability(vector<int> &current_sol)
 	dish_d[k] = vector<int>(v_times_dishes[k].size(), 0);
 	last_d[k] = vector<int>(v_times_dishes[k].size(), -1);
     }
-
    for(int i = 0 ; i < nDias; i++)
    {
        //if(v_times_dishes[STARTER_1][x_var[i*N_OPT_DAY + STARTER_1]].description != v_times_dishes[STARTER_2][x_var[i*N_OPT_DAY + STARTER_2]].description ) variability_day++;
        //if(v_times_dishes[MAIN_COURSE_1][x_var[i*N_OPT_DAY + MAIN_COURSE_1]].description != v_times_dishes[MAIN_COURSE_2][x_var[i*N_OPT_DAY + MAIN_COURSE_2]].description ) variability_day++;
-       if(v_times_dishes[MORNING_SNACK][x_var[i*N_OPT_DAY + MORNING_SNACK]].description != v_times_dishes[EVENING_SNACK][x_var[i*N_OPT_DAY + EVENING_SNACK]].description ) variability_day++;
+     if(v_times_dishes[MORNING_SNACK][x_var[i*N_OPT_DAY + MORNING_SNACK]].description != v_times_dishes[EVENING_SNACK][x_var[i*N_OPT_DAY + EVENING_SNACK]].description ) variability_day++;
      for(int k = 0; k < N_OPT_DAY; k++)
      {
        int id_dish = x_var[i*N_OPT_DAY + k];
