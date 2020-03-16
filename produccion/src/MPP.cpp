@@ -294,14 +294,9 @@ void MPP::calculateFeasibilityDegree(){
      y is the global variability 
 */
 void MPP::evaluate(){
-    variabilidadObj = 0.0;
-  //variabilidadObj= variability_day + pow(variability_global,2);
-
   calculateFeasibilityDegree();
-  //fitness = 1.0/(valorFac + 1.0e4/variabilidadObj);
-  fitness =valorFac ;//- 1.0e3*variabilidadObj;// 1.0/(valorFac+0.0001);
-//  cout << valorFac <<  " " <<variabilidadObj <<endl;
-
+  variabilidadObj = calculateVariability(x_var);
+  fitness =valorFac - variabilidadObj;
 }
 void MPP::init(){
    x_var.resize(N_OPT_DAY*nDias);
@@ -444,12 +439,10 @@ void MPP::localSearch( ) {
 	vector<int> bestIndividual = x_var;
 	evaluate();
 	cout <<"entra..."<<valorFac<<endl;
-	double currentVariability = calculateVariability(x_var);
-	pair<double, double> bestResult = make_pair(valorFac, -currentVariability);
+	pair<double, double> bestResult = make_pair(valorFac, -variabilidadObj);
 
 	for (int i = 0; i < 10000; i++){
 		pair<double, double> currentResult = First_Improvement_Hill_Climbing(neighbors, x_var);
-		evaluate();//evaluate x_var..
 		if (currentResult >= bestResult){
 			x_var = bestIndividual;
 		} else {
@@ -544,7 +537,8 @@ void MPP::exportcsv()
 {
    ofstream ofs;
    ofs.open(MPP_problem->out_filename.c_str());
-   ofs<<"DIA , DESAYUNO , COLACION_MATUTINA , COMIDA_ENTRADA , COMIDA_ENTRADA , COMIDA_PRINCIPAL , COMIDA_PRINCIPAL , COLACION_VESPERTINA , CENA ";
+   //ofs<<"DIA , DESAYUNO , COLACION_MATUTINA , COMIDA_ENTRADA , COMIDA_ENTRADA , COMIDA_PRINCIPAL , COMIDA_PRINCIPAL , COLACION_VESPERTINA , CENA ";
+   ofs<<"DIA , DESAYUNO , COLACION_MATUTINA , COMIDA_ENTRADA , COMIDA_PRINCIPAL , COLACION_VESPERTINA , CENA ";
     for(auto i = MPP_problem->dic_nut_id.begin(); i !=  MPP_problem->dic_nut_id.end(); i++) ofs <<" , "<<i->first ;
 	ofs<< "\n";
     
@@ -791,106 +785,52 @@ pair<double, double> MPP::First_Improvement_Hill_Climbing(vector<Neighbor> &neig
 	else if(new_infeasibility == current_infeasibility) //to check: epsilon...
         { 
 	    //double new_variability = calculateVariability(current_sol, neighbors[i]);
+	    int tmp = current_sol[neighbors[i].variable];
+	    current_sol[neighbors[i].variable] = neighbors[i].newValue;
 	    double new_variability = calculateVariability(current_sol);
+	    
 	   if(current_variability < new_variability)
 	   {	
 	      improved = true;
 	      current_variability = new_variability;
-	      current_sol[neighbors[i].variable] = neighbors[i].newValue;
+	   //   current_sol[neighbors[i].variable] = neighbors[i].newValue;
 	   }
+	   else 
+	    current_sol[neighbors[i].variable] = tmp;
         }
       }
     }
-    return make_pair(current_infeasibility, current_variability);
+    return make_pair(current_infeasibility, -current_variability);
 }
 double MPP::calculateVariability()
 {
-    vector<vector<infoDishes> > &v_times_dishes = MPP_problem->v_times_dishes;
-    double variability_day= 0.0, variability_global = 0.0;
-    //fitness by day...    
-   int NN = v_times_dishes.size();
-    vector<vector<int>> minv_d(NN), cont_d(NN), dish_d(NN), last_d(NN);
-    for(int k = 0; k < N_OPT_DAY; k++)
-    {
-	minv_d[k] = vector<int>(v_times_dishes[k].size(), INT_MAX);
-	cont_d[k] = vector<int>(v_times_dishes[k].size(), 0);
-	dish_d[k] = vector<int>(v_times_dishes[k].size(), 0);
-	last_d[k] = vector<int>(v_times_dishes[k].size(), -1);
-    }
-
-   for(int i = 0 ; i < nDias; i++)
-   {
-//       if(v_times_dishes[STARTER_1][x_var[i*N_OPT_DAY + STARTER_1]].description != v_times_dishes[STARTER_2][x_var[i*N_OPT_DAY + STARTER_2]].description ) variability_day++;
-//       if(v_times_dishes[MAIN_COURSE_1][x_var[i*N_OPT_DAY + MAIN_COURSE_1]].description != v_times_dishes[MAIN_COURSE_2][x_var[i*N_OPT_DAY + MAIN_COURSE_2]].description ) variability_day++;
-       if(v_times_dishes[MORNING_SNACK][x_var[i*N_OPT_DAY + MORNING_SNACK]].description != v_times_dishes[EVENING_SNACK][x_var[i*N_OPT_DAY + EVENING_SNACK]].description ) variability_day++;
-     for(int k = 0; k < N_OPT_DAY; k++)
-     {
-       int id_dish = x_var[i*N_OPT_DAY + k];
-       if(last_d[k][id_dish] != -1)
-	{
-	  int diff = i - last_d[k][id_dish];
-	  if( minv_d[k][id_dish] > diff)
-	  {
-	   minv_d[k][id_dish] = diff;
-	   cont_d[k][id_dish] = 0;
-	  }
-	  else if(minv_d[k][id_dish] == diff )
-	    cont_d[k][id_dish]++;
-	}
-	last_d[k][id_dish] = i;
-     }
-   }
-  for(int k = 0; k < N_OPT_DAY; k++)
-   for(int i = 0; i < NN; i++)
-   {
-    if(last_d[k][i] == -1) continue;
-     variability_global +=  minv_d[k][i] + cont_d[k][i];
-   }
-
- return 0;
 }
 double MPP::calculateVariability(vector<int> &current_sol)
 {
-    vector<vector<infoDishes> > &v_times_dishes = MPP_problem->v_times_dishes;
-    double variability_day= 0.0, variability_global = 0.0;
-    //fitness by day...    
-   int NN = v_times_dishes.size();
-    vector<vector<int>> minv_d(NN), cont_d(NN), dish_d(NN), last_d(NN);
+   vector<vector<infoDishes> > &v_times_dishes = MPP_problem->v_times_dishes;
+   double variability_day= 0.0, variability_global = 0.0;
+       int min_diff = nDias;
+    vector<int> cont_d(nDias, 0);
     for(int k = 0; k < N_OPT_DAY; k++)
     {
-	minv_d[k] = vector<int>(v_times_dishes[k].size(), INT_MAX);
-	cont_d[k] = vector<int>(v_times_dishes[k].size(), 0);
-	dish_d[k] = vector<int>(v_times_dishes[k].size(), 0);
-	last_d[k] = vector<int>(v_times_dishes[k].size(), -1);
+       vector<int> last_d((int)v_times_dishes[k].size(), -1);
+       for(int i = 0 ; i < nDias; i++)
+       {
+     	   //if(v_times_dishes[MORNING_SNACK][current_sol[i*N_OPT_DAY + MORNING_SNACK]].description != v_times_dishes[EVENING_SNACK][current_sol[i*N_OPT_DAY + EVENING_SNACK]].description ) variability_day++;
+	   int id_dish = v_times_dishes[k][current_sol[i*N_OPT_DAY + k]].category;
+	   if(last_d[id_dish] != -1)
+	   {
+	      int diff = i - last_d[id_dish];
+	      cont_d[diff]++;
+	      min_diff = min(min_diff, diff);
+	   }
+	   last_d[id_dish] = i;
+       }
     }
-   for(int i = 0 ; i < nDias; i++)
-   {
-       //if(v_times_dishes[STARTER_1][x_var[i*N_OPT_DAY + STARTER_1]].description != v_times_dishes[STARTER_2][x_var[i*N_OPT_DAY + STARTER_2]].description ) variability_day++;
-       //if(v_times_dishes[MAIN_COURSE_1][x_var[i*N_OPT_DAY + MAIN_COURSE_1]].description != v_times_dishes[MAIN_COURSE_2][x_var[i*N_OPT_DAY + MAIN_COURSE_2]].description ) variability_day++;
-     if(v_times_dishes[MORNING_SNACK][x_var[i*N_OPT_DAY + MORNING_SNACK]].description != v_times_dishes[EVENING_SNACK][x_var[i*N_OPT_DAY + EVENING_SNACK]].description ) variability_day++;
-     for(int k = 0; k < N_OPT_DAY; k++)
-     {
-       int id_dish = x_var[i*N_OPT_DAY + k];
-       if(last_d[k][id_dish] != -1)
-	{
-	  int diff = i - last_d[k][id_dish];
-	  if( minv_d[k][id_dish] > diff)
-	  {
-	   minv_d[k][id_dish] = diff;
-	   cont_d[k][id_dish] = 0;
-	  }
-	  else if(minv_d[k][id_dish] == diff )
-	    cont_d[k][id_dish]++;
-	}
-	last_d[k][id_dish] = i;
-     }
-   }
-  for(int k = 0; k < N_OPT_DAY; k++)
-   for(int i = 0; i < NN; i++)
-   {
-    if(last_d[k][i] == -1) continue;
-     variability_global +=  minv_d[k][i] + cont_d[k][i];
-   }
+	if(min_diff != nDias)
+	variability_global = min_diff;//cont_d[min_diff]*(min_diff+1);
 
+// cout << variability_global << "____"<< endl;
  return variability_day + variability_global;
 }
+

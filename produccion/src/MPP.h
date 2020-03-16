@@ -21,15 +21,6 @@ using namespace std;
 #define EVENING_SNACK 4
 #define DINNER 5
 
-//#define N_FOODS_DAY 6
-////Options of the v_times_dishes..
-//#define BREAKFAST 0 
-//#define MORNING_SNACK 1
-//#define STARTER 2
-//#define MAIN_COURSE 3
-//#define EVENING_SNACK 4
-//#define DINNER 5
-
 //#define BOTH_SNACK 8
 ////////crossover type......
 #define PAIR_BASED_CROSSOVER 1
