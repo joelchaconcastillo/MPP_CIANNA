@@ -5,7 +5,7 @@
 using namespace std;
 #define FOREACH(i, v) for (__typeof((v).begin()) i = (v).begin(); i != (v).end(); i++)
 //v_breakfast, v_morning_snack, v_starter, v_main_course, v_evening_snack, v_dinner, v_both_snack;
-
+#define EPSILON 1e-5
 #define CATEGORY_1 1
 #define CATEGORY_2 2
 #define CATEGORY_BOTH 0
@@ -13,19 +13,22 @@ using namespace std;
 #define DIARIA 2
 
 //encoded times by each day of the individual
-#define N_OPT_DAY 6
+#define N_OPT_DAY 8
 #define BREAKFAST 0
 #define MORNING_SNACK 1
-#define STARTER 2
-#define MAIN_COURSE 3
-#define EVENING_SNACK 4
-#define DINNER 5
+#define STARTER_1 2
+#define STARTER_2 3
+#define MAIN_COURSE_1 4
+#define MAIN_COURSE_2 5
+#define EVENING_SNACK 6
+#define DINNER 7
 
 //#define BOTH_SNACK 8
 ////////crossover type......
 #define PAIR_BASED_CROSSOVER 1
 #define UNIFORM_CROSSOVER 2
 #define UNIFORM2_CROSSOVER 3
+#define WEIGHT_DAY 1e6
 
 //extern volatile bool finished;
 extern int crossoverType;
@@ -103,14 +106,15 @@ class MPP{
 		void calculateFeasibilityDegree();
 		void my_next_permutation(vector<int> &perm, vector<int> &v_max_opt);
 
-		double init_incremental_evaluation(vector<double> &globalPlan, vector< vector<double> > &nutriment_per_day, vector<int> &sol);
-		double inc_eval_feas_time(vector<double> &globalPlan, vector<vector<double> > &nutriment_per_day, vector<int> &current_sol, Neighbor &new_neighbor, double current_infeasibility);
+		double init_incremental_evaluation(vector< vector<double> > &globalPlan, vector< vector< vector<double> > >&nutriment_per_day, vector<int> &sol);
+		double inc_eval_feas_time(vector< vector<double> > &globalPlan, vector< vector<vector<double> > > &nutriment_per_day, vector<int> &current_sol, Neighbor &new_neighbor, double current_infeasibility);
 
-		void update_data_incremental_eval(vector<double> &globalPlan, vector<vector<double> > &nutriment_per_day, vector<int> &current_sol, Neighbor &new_neighbor);
+		void update_data_incremental_eval(vector< vector<double> > &globalPlan, vector< vector<vector<double> > > &nutriment_per_day, vector<int> &current_sol, Neighbor &new_neighbor);
 
 		double calculateVariability(vector<int> &current_sol);
 
 		double calculateVariability();
+		bool day_constraint(infoDishes &dish1, infoDishes &dish2);
 		int heaviestNut, heaviestType;
 		double valorFac, variabilidadObj;//factibility and variability of the current solution..
 		set<int> badDays;
