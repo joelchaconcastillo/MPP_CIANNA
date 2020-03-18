@@ -118,6 +118,8 @@ class MPP{
 		int heaviestNut, heaviestType;
 		double valorFac, variabilidadObj;//factibility and variability of the current solution..
 		set<int> badDays;
+		int opts[2*(N_OPT_DAY-2)] = {BREAKFAST, MORNING_SNACK, STARTER_1, MAIN_COURSE_1, EVENING_SNACK, DINNER, BREAKFAST, MORNING_SNACK, STARTER_2, MAIN_COURSE_2, EVENING_SNACK, DINNER};
+		int nopts =2;
 
 };
 
