@@ -5,7 +5,8 @@
 using namespace std;
 #define FOREACH(i, v) for (__typeof((v).begin()) i = (v).begin(); i != (v).end(); i++)
 //v_breakfast, v_morning_snack, v_starter, v_main_course, v_evening_snack, v_dinner, v_both_snack;
-#define EPSILON 1e-5
+#define EPSILON 1e-50
+
 #define CATEGORY_1 1
 #define CATEGORY_2 2
 #define CATEGORY_BOTH 0
@@ -23,13 +24,16 @@ using namespace std;
 #define EVENING_SNACK 6
 #define DINNER 7
 
+
 //#define BOTH_SNACK 8
 ////////crossover type......
 #define PAIR_BASED_CROSSOVER 1
 #define UNIFORM_CROSSOVER 2
 #define UNIFORM2_CROSSOVER 3
-#define WEIGHT_DAY 1e6
-
+#define WEIGHT_DAY 1.0e6
+#define DAYS_FAVORITE 7*3
+#define DAYS_NO_FAVORITE 7*4
+#define ITERATIONS_LS 1000
 //extern volatile bool finished;
 extern int crossoverType;
 extern int nDias;
@@ -38,6 +42,11 @@ struct Neighbor {
 	int variable;
 	int newValue;
 };
+
+struct Neighbor_swap{
+	int day1, day2;
+};
+
 
 struct infoDishes {
         int description;	
@@ -68,6 +77,9 @@ class MPP_Problem{
 		unordered_map<string, int> dic_nut_id;
 		vector<int> v_constraint_global, v_constraint_day;
 		string out_filename;
+		vector<vector<int>> conf_day;
+	        vector<vector<int>> time_conf;
+		int max_description_id;
 };
 class MPP{
 	public:
@@ -88,7 +100,7 @@ class MPP{
 		void pairBasedCrossover(MPP &i2);
 		void localSearch();
 		pair<double, double> First_Improvement_Hill_Climbing(vector<Neighbor> &neighbors, vector<int> &current_sol);
-
+		pair<double, double> First_Improvement_Hill_Climbing_swap(vector<Neighbor_swap> &neighbors, pair<double, double> &currentResult, vector<int> &x_var);
 		int getDistance(MPP &ind2); 
 		void full_search();
 		void exportcsv();
@@ -118,9 +130,6 @@ class MPP{
 		int heaviestNut, heaviestType;
 		double valorFac, variabilidadObj;//factibility and variability of the current solution..
 		set<int> badDays;
-		int opts[2*(N_OPT_DAY-2)] = {BREAKFAST, MORNING_SNACK, STARTER_1, MAIN_COURSE_1, EVENING_SNACK, DINNER, BREAKFAST, MORNING_SNACK, STARTER_2, MAIN_COURSE_2, EVENING_SNACK, DINNER};
-		int nopts =2;
-
 };
 
 #endif
