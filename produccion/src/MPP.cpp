@@ -352,7 +352,7 @@ void MPP::localSearch( ) {
 
 	for (int i = 0; i < ITERATIONS_LS; i++){
 		pair<double, double> currentResult = First_Improvement_Hill_Climbing(neighbors, x_var);
-		currentResult = First_Improvement_Hill_Climbing_swap(neighbors_swap, currentResult, x_var);
+	//	currentResult = First_Improvement_Hill_Climbing_swap(neighbors_swap, currentResult, x_var);
 		
 		if (currentResult >= bestResult){
 			x_var = bestIndividual;
