@@ -45,7 +45,7 @@ void MPP_Problem::load_data(int argc, char **argv)
 }
 void MPP_Problem::load_dishes(char *c_filename)
 {
-
+        max_description_id = 0;
    	ifstream ifs;
 	struct infoDishes str_dish;
 	ifs.open(c_filename, ifstream::in);
@@ -85,6 +85,7 @@ void MPP_Problem::load_dishes(char *c_filename)
 			//else { cout << column_names[i]<<endl;}// cout << "error interno"<<endl; exit(EXIT_FAILURE);}
 			}
                }
+	       max_description_id = max(max_description_id, str_dish.description);
 	       if(cell.empty()) break; //The file has an extra empty line
 		
 	       if(str_dish.time_day == "DESAYUNO") v_times_dishes[BREAKFAST].push_back(str_dish);
@@ -352,7 +353,7 @@ void MPP::localSearch( ) {
 
 	for (int i = 0; i < ITERATIONS_LS; i++){
 		pair<double, double> currentResult = First_Improvement_Hill_Climbing(neighbors, x_var);
-	//	currentResult = First_Improvement_Hill_Climbing_swap(neighbors_swap, currentResult, x_var);
+//		currentResult = First_Improvement_Hill_Climbing_swap(neighbors_swap, currentResult, x_var);
 		
 		if (currentResult >= bestResult){
 			x_var = bestIndividual;
@@ -404,11 +405,13 @@ void MPP::localSearch( ) {
 			}
 		}
 	}
+ 
+	//First_Improvement_Hill_Climbing_swap(neighbors_swap, bestResult, bestIndividual);
 	x_var = bestIndividual;
 	evaluate();
 	cout <<"sale--- "<< valorFac<< " " <<variabilidadObj << endl;
 	exportcsv();
-	calculateFeasibilityDegree2();
+//	calculateFeasibilityDegree2();
    exit(0);
 }
 
@@ -822,17 +825,19 @@ double MPP::calculateVariability(vector<int> &current_sol)
 {
    vector<vector<infoDishes> > &v_times_dishes = MPP_problem->v_times_dishes;
    double variability_day = 0.0, variability_global = 0.0, variability_cat_day=0.0, variability_fav=0.0;
+   int max_variability_day =0;
    unordered_set<int> gl_ids;
    unordered_map<int, int> min_dist_day_id, last_day;
    unordered_map<int, bool> favorite;
    
    for(int d = 0; d < nDias; d++)
    {
-        unordered_set<int> day_ids;
+        unordered_set<int> day_ids, snacks_cat, starter_cat, main_course_cat;
 //	for(int i = 0; i < N_OPT_DAY; i++)
 	for(int i = 0; i < MPP_problem->time_conf.size(); i++)
 	{
 	   if(MPP_problem->time_conf[i].empty())continue;
+	   max_variability_day++;
 	   int id = v_times_dishes[i][current_sol[d*N_OPT_DAY + i]].description;
 	   favorite[id] =v_times_dishes[i][current_sol[d*N_OPT_DAY + i]].favorite;
 	   day_ids.insert(id);
@@ -841,7 +846,15 @@ double MPP::calculateVariability(vector<int> &current_sol)
 	      min_dist_day_id[id] = min(min_dist_day_id[id], last_day[id]);
 	   else min_dist_day_id[id] = nDias;
 	      last_day[id] = d;
+
+	   //cat by snacks..
+	   if( i == MORNING_SNACK || i == EVENING_SNACK) snacks_cat.insert(id);
+        //cat by starter..
+	   else if( i == STARTER_1 || i == STARTER_2) starter_cat.insert(id);
+	//cat by main_course....
+	   else if( i == MAIN_COURSE_1|| i == MAIN_COURSE_2) main_course_cat.insert(id);
 	}
+	variability_cat_day += snacks_cat.size() + starter_cat.size() + main_course_cat.size();
 	variability_day +=day_ids.size();
    }
    variability_global = gl_ids.size();
@@ -853,7 +866,11 @@ double MPP::calculateVariability(vector<int> &current_sol)
 	  variability_fav += nDias;
 	else variability_fav += i->second;
     }
-   return variability_day*10000 + variability_global + 10*variability_fav;
+   variability_day /= (max_variability_day);
+   variability_global /=(MPP_problem->max_description_id);
+   variability_fav /= (nDias*MPP_problem->max_description_id);
+   variability_cat_day /=(nDias*6);
+   return variability_day*10.0 + variability_global*0.5 + variability_fav*5.0 + variability_cat_day*0.5;
 }
 bool MPP::day_constraint(infoDishes &dish1, infoDishes &dish2)
 {
@@ -868,6 +885,7 @@ pair<double, double> MPP::First_Improvement_Hill_Climbing_swap(vector<Neighbor_s
   bool improved= true;
   vector<int> current = bestIndividual;
   pair<double, double> currentResult = bestResult;
+	cout <<"entra... " << currentResult.second<<endl;
   while(improved)
   {
      improved = false;
@@ -885,9 +903,7 @@ pair<double, double> MPP::First_Improvement_Hill_Climbing_swap(vector<Neighbor_s
 	   for(int ii = 0; ii < MPP_problem->time_conf.size(); ii++)
 	   {
 	      if(MPP_problem->time_conf[ii].empty())continue;
-
-	      current[neighbors[i].day1*N_OPT_DAY + ii] = bestIndividual[neighbors[i].day1*N_OPT_DAY + ii] ;
-	      current[neighbors[i].day2*N_OPT_DAY + ii] = bestIndividual[neighbors[i].day2*N_OPT_DAY + ii] ;
+	      swap(current[neighbors[i].day1*N_OPT_DAY + ii], current[neighbors[i].day2*N_OPT_DAY + ii] );
 	   }
 //			current = bestIndividual;
 	}
@@ -895,14 +911,14 @@ pair<double, double> MPP::First_Improvement_Hill_Climbing_swap(vector<Neighbor_s
 	{
             improved = true;
 	    bestResult = currentResult;
-	   for(int ii = 0; ii < MPP_problem->time_conf.size(); ii++)
-	   {
-	     if(MPP_problem->time_conf[ii].empty())continue;
-	     swap(current[neighbors[i].day1*N_OPT_DAY + ii], current[neighbors[i].day2*N_OPT_DAY + ii] );
+	    for(int ii = 0; ii < MPP_problem->time_conf.size(); ii++)
+	    {
+	      if(MPP_problem->time_conf[ii].empty())continue;
+	      swap(bestIndividual[neighbors[i].day1*N_OPT_DAY + ii], bestIndividual[neighbors[i].day2*N_OPT_DAY + ii] );
 	   }
-        //    bestIndividual = current;
 	}
      }
   }
+	cout <<"sale... " << bestResult.second<<endl;
   return bestResult;
 }
