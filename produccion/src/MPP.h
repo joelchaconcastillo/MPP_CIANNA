@@ -18,11 +18,11 @@ using namespace std;
 #define BREAKFAST 0
 #define MORNING_SNACK 1
 #define STARTER_1 2
-#define STARTER_2 3
-#define MAIN_COURSE_1 4
-#define MAIN_COURSE_2 5
-#define EVENING_SNACK 6
-#define DINNER 7
+#define MAIN_COURSE_1 3
+#define EVENING_SNACK 4
+#define DINNER 5
+#define STARTER_2 6
+#define MAIN_COURSE_2 7
 
 
 //#define BOTH_SNACK 8
