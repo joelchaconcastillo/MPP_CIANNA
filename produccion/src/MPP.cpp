@@ -361,7 +361,7 @@ void MPP::localSearch( ) {
 			bestResult = currentResult;
 			bestIndividual = x_var;
 	evaluate();	
-			cout << currentResult.first << " " << currentResult.second <<" " << badDays.size()<<endl;
+			cout << currentResult.first << " " << currentResult.second <<" " << badDays.size()<< " " << i<<endl;
 		}
 
 		evaluate();
