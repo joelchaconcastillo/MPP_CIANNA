@@ -541,8 +541,9 @@ void MPP::full_search()
    if( in_valorFac <= bestResult.first)
    {
       bestResult.first = in_valorFac;
+      variabilidadObj = calculateVariability(x_var);
       x_best = x_var;		
-      cout << bestResult.first << " " <<bestResult.second<< " " <<cont<<endl;
+      cout << bestResult.first << " " <<-variabilidadObj<< " " <<cont<<endl;
    }
    if( in_valorFac == 0.0) //feasible solution
    {
