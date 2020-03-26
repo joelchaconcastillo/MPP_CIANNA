@@ -19,7 +19,7 @@ int main(int argc, char **argv){
 	vector<vector<int>> conf_day;//(2, vector<int> (6));
 	vector<vector<int>> time_conf(N_OPT_DAY);
 	conf_day.push_back({BREAKFAST, MORNING_SNACK, STARTER_1, MAIN_COURSE_1, EVENING_SNACK, DINNER});
-//	conf_day.push_back({BREAKFAST, MORNING_SNACK, STARTER_2, MAIN_COURSE_1, EVENING_SNACK, DINNER});
+	conf_day.push_back({BREAKFAST, MORNING_SNACK, STARTER_2, MAIN_COURSE_1, EVENING_SNACK, DINNER});
 	for(int i = 0; i < conf_day.size(); i++)
 	{
 	   for(int j = 0; j  < conf_day[i].size(); j++)

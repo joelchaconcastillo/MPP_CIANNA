@@ -538,13 +538,13 @@ void MPP::full_search()
            in_valorFac += (accum_nut > maxv)?((accum_nut - maxv)/middle)*((accum_nut - maxv)/middle)*WEIGHT_DAY:0;
            if(in_valorFac > bestResult.first) break; //first optimization..
    }
-   if( in_valorFac < bestResult.first)
+   if( in_valorFac <= bestResult.first)
    {
       bestResult.first = in_valorFac;
       x_best = x_var;		
       cout << bestResult.first << " " <<bestResult.second<< " " <<cont<<endl;
    }
-   if( in_valorFac <= 1e-15) //feasible solution
+   if( in_valorFac == 0.0) //feasible solution
    {
       variabilidadObj = calculateVariability(x_var);
       feasible_solutions.push_back(x_var);
