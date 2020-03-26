@@ -44,7 +44,7 @@ int main(int argc, char **argv){
 
         //everithing seem's to be OK, thus starting the algorithm...
 //	MA ma(N, pc, pm, finalTime);
- 	
+// 	
 //	ma.run();
 
 	ExtendedIndividual *ei = new ExtendedIndividual();
