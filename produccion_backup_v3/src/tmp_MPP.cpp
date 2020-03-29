@@ -22,6 +22,7 @@ string trim(const string& s)
 {
 	return rtrim(ltrim(s));
 }
+
 MPP_Problem* MPP::MPP_problem;
 
 //////////////////////////// Funciones del individuo ////////////////////////////////
@@ -45,7 +46,7 @@ void MPP_Problem::load_data(int argc, char **argv)
 }
 void MPP_Problem::load_dishes(char *c_filename)
 {
-        max_description_id = 0;
+
    	ifstream ifs;
 	struct infoDishes str_dish;
 	ifs.open(c_filename, ifstream::in);
@@ -85,29 +86,27 @@ void MPP_Problem::load_dishes(char *c_filename)
 			//else { cout << column_names[i]<<endl;}// cout << "error interno"<<endl; exit(EXIT_FAILURE);}
 			}
                }
-	       max_description_id = max(max_description_id, str_dish.description);
 	       if(cell.empty()) break; //The file has an extra empty line
+
 		
 	       if(str_dish.time_day == "DESAYUNO") v_times_dishes[BREAKFAST].push_back(str_dish);
 	       else if(str_dish.time_day == "COLACION_MATUTINA") v_times_dishes[MORNING_SNACK].push_back(str_dish);
-	   //    else if(str_dish.time_day == "COMIDA_ENTRADA") v_times_dishes[STARTER].push_back(str_dish);
-//	       else if(str_dish.time_day == "COMIDA_ENTRADA" && str_dish.category == CATEGORY_1) v_times_dishes[STARTER_1].push_back(str_dish);
-//	       else if(str_dish.time_day == "COMIDA_ENTRADA" && str_dish.category == CATEGORY_2) v_times_dishes[STARTER_2].push_back(str_dish);
-//	       else if(str_dish.time_day == "COMIDA_ENTRADA" && str_dish.category == CATEGORY_BOTH) //this dish blong to both categories...
-		else if(str_dish.time_day == "COMIDA_ENTRADA" )
-		{
-		 v_times_dishes[STARTER_1].push_back(str_dish);
-		 v_times_dishes[STARTER_2].push_back(str_dish);
-		}
-//	       else if(str_dish.time_day == "COMIDA_PRINCIPAL") v_times_dishes[MAIN_COURSE].push_back(str_dish);
+	       else if(str_dish.time_day == "COMIDA_ENTRADA") v_times_dishes[STARTER].push_back(str_dish);
+///	       else if(str_dish.time_day == "COMIDA_ENTRADA" && str_dish.category == CATEGORY_1) v_times_dishes[STARTER_1].push_back(str_dish);
+///	       else if(str_dish.time_day == "COMIDA_ENTRADA" && str_dish.category == CATEGORY_2) v_times_dishes[STARTER_2].push_back(str_dish);
+///	       else if(str_dish.time_day == "COMIDA_ENTRADA" && str_dish.category == CATEGORY_BOTH) //this dish blong to both categories...
+///		{
+///		 v_times_dishes[STARTER_1].push_back(str_dish);
+///		 v_times_dishes[STARTER_2].push_back(str_dish);
+///		}
+	       else if(str_dish.time_day == "COMIDA_PRINCIPAL") v_times_dishes[MAIN_COURSE].push_back(str_dish);
 //	       else if(str_dish.time_day == "COMIDA_PRINCIPAL" && str_dish.category == CATEGORY_1) v_times_dishes[MAIN_COURSE_1].push_back(str_dish);
 //	       else if(str_dish.time_day == "COMIDA_PRINCIPAL" && str_dish.category == CATEGORY_2) v_times_dishes[MAIN_COURSE_2].push_back(str_dish);
 //	       else if(str_dish.time_day == "COMIDA_PRINCIPAL" && str_dish.category == CATEGORY_BOTH) //both categories..
-		else if(str_dish.time_day == "COMIDA_PRINCIPAL")
-		{
-		  v_times_dishes[MAIN_COURSE_1].push_back(str_dish);
-		  v_times_dishes[MAIN_COURSE_2].push_back(str_dish);
-		}
+//		{
+//		  v_times_dishes[MAIN_COURSE_1].push_back(str_dish);
+//		  v_times_dishes[MAIN_COURSE_2].push_back(str_dish);
+//		}
 	       else if(str_dish.time_day == "COLACION_VESPERTINA") v_times_dishes[EVENING_SNACK].push_back(str_dish);
 	       else if(str_dish.time_day == "CENA") v_times_dishes[DINNER].push_back(str_dish);
 	       else if(str_dish.time_day == "COLACION_AMBAS")
@@ -189,8 +188,105 @@ void MPP_Problem::load_constraints(char *c_filename)
 	}
 }
 void MPP::calculateFeasibilityDegree2(){
+	int num_nutr = (int)MPP_problem->v_constraints.size();
+	vector<constraint_nutrient> &v_constraints = (MPP_problem->v_constraints);
+	double infoNPlan[num_nutr];
+	bzero(infoNPlan, sizeof(infoNPlan));
+	cout << "diario"<<endl;
+	for(int i = 0; i < nDias; i++){
+	cout << "Dia: " <<i<<endl;
+		int x = i*N_OPT_DAY;
+		double dayNutr[num_nutr];
+		bzero(dayNutr, sizeof(dayNutr));
+		for(unsigned int j = 0; j < num_nutr; j++){
+			for(unsigned int k = 0; k < N_OPT_DAY; k++)
+		 	   dayNutr[j] += MPP_problem->v_times_dishes[k][x_var[x+k]].v_nutrient_value[j];
+			infoNPlan[j] += dayNutr[j]; //for global nutr..
+		}
+               //////////daily nutrients...
+		for (int j = 0; j < (int)MPP_problem->v_constraint_day.size(); j++){
+			int index = MPP_problem->v_constraint_day[j];
+			double min = v_constraints[index].min;
+			double max = v_constraints[index].max;
+			if(dayNutr[index] < min){
+				cout <<"<" <<v_constraints[index].name <<":"<< dayNutr[index]<<"--"<<min << endl;
+			}
+			 if (dayNutr[index] > max){
+				cout <<">"<<v_constraints[index].name <<":"<< dayNutr[index]<<"--"<<max <<endl;
+			}
+		}
+	cout <<endl<<endl;
+	}
+	cout << "global"<<endl;
+	////////////////global nutriments...
+	double heaviestValue = 0;
+	heaviestNut = -1;
+	for(unsigned int i = 0; i < (int) MPP_problem->v_constraint_global.size(); i++){
+		int index = MPP_problem->v_constraint_global[i];
+		double min = v_constraints[index].min;
+		double max = v_constraints[index].max;
+		if (infoNPlan[index] < min){
+			cout <<"<"<<v_constraints[index].name <<":"<< infoNPlan[index]<<"--"<<min <<endl;
+		} 
+		if (infoNPlan[index] > max){
+			cout <<">"<<v_constraints[index].name <<":"<< infoNPlan[index]<<"--"<<max <<endl;
+		}
+	}
 }
+void MPP::calculateFeasibilityDegree(){
+	valorFac = 0.0;
+	int num_nutr = (int)MPP_problem->v_constraints.size();
+	vector<constraint_nutrient> &v_constraints = (MPP_problem->v_constraints);
+	badDays.clear();
 
+	double heaviestValue = 0;
+	heaviestNut = -1;
+
+        for(int i = 0; i < num_nutr; i++)
+        {
+           double minv = v_constraints[i].min-EPSILON;
+           double maxv = v_constraints[i].max+EPSILON;
+	  double middle = (maxv+minv)*0.5;
+           double globalNutr = 0.0;
+	   for(int j = 0; j < nDias; j++)
+	   {
+	      double dayNutr = 0.0;
+	      for(int k = 0; k < N_OPT_DAY; k++)
+		dayNutr += MPP_problem->v_times_dishes[k][x_var[j*N_OPT_DAY+k]].v_nutrient_value[i];
+		globalNutr += dayNutr;
+		if(v_constraints[i].type == DIARIA)
+          	{
+	            if(dayNutr  < minv) valorFac += ((minv - dayNutr)/middle)*((minv - dayNutr)/middle)*WEIGHT_DAY, badDays.insert(j);
+	            else if (dayNutr > maxv) valorFac +=((dayNutr - maxv)/middle)*((dayNutr - maxv)/middle)*WEIGHT_DAY, badDays.insert(j);
+        	}
+	   }
+	   if(v_constraints[i].type == GLOBAL)
+           {
+	     if(globalNutr < minv)
+	     {
+	       double v = ((minv - globalNutr)/middle)*((minv - globalNutr)/middle);
+	       valorFac += v;
+	       if( v >  heaviestValue)
+	       {
+	         heaviestValue = v;
+	         heaviestNut = i;
+	         heaviestType = -1;
+	       }
+	     }
+	     else if (globalNutr > maxv)
+	     {
+	       double v =((globalNutr - maxv)/middle)*((globalNutr - maxv)/middle);
+	       valorFac +=v;
+	       if( v >  heaviestValue)
+	       {
+	         heaviestValue = v;
+	         heaviestNut = i;
+	         heaviestType = 1;
+	       }
+	     }
+           }
+        }
+}
 /*
  The objective is defined as follows:
   max f(x) + g(y)
@@ -341,27 +437,22 @@ void MPP::localSearch( ) {
 	     }
 	   }
 	 }
-
-       vector<Neighbor_swap> neighbors_swap;
-  for(int i = 0; i < nDias; i++)
-     for(int j = i+1; j < nDias; j++) neighbors_swap.push_back({i, j});
-
 	vector<int> bestIndividual = x_var;
 	evaluate();
 	cout <<"entra..."<<valorFac<<endl;
 	pair<double, double> bestResult = make_pair(valorFac, -variabilidadObj);
 
-	for (int i = 0; i < ITERATIONS_LS; i++){
+	for (int i = 0; i < 5000; i++){
 		pair<double, double> currentResult = First_Improvement_Hill_Climbing(neighbors, x_var);
-//		currentResult = First_Improvement_Hill_Climbing_swap(neighbors_swap, currentResult, x_var);
-		
+	        
+
 		if (currentResult >= bestResult){
 			x_var = bestIndividual;
 		} else {
 			bestResult = currentResult;
 			bestIndividual = x_var;
 	evaluate();	
-			cout << currentResult.first << " " << currentResult.second <<" " << badDays.size()<< " " << i<<endl;
+			cout << currentResult.first << " " << currentResult.second <<" " << badDays.size()<<endl;
 		}
 
 		evaluate();
@@ -394,24 +485,22 @@ void MPP::localSearch( ) {
 			for (auto it = v.begin(); it != v.end(); it++){
 
 				int day = *it;
-		//		if (random()%2){
-		//			for(int k = 0; k < N_OPT_DAY; k++) x_var[day*N_OPT_DAY + k] = MPP_problem->random_dish(k);
-		//		} else {
+//				if (random()%2){
+//					for(int k = 0; k < N_OPT_DAY; k++) x_var[day*N_OPT_DAY + k] = MPP_problem->random_dish(k);
+//				} else {
 					int which = rand() % N_OPT_DAY;
 					x_var[day * N_OPT_DAY + which] = MPP_problem->random_dish(which);
-		//		}
+				//}
 				break;
 				//cout << which << " "<<	x_var[day * N_OPT_DAY + which]<<endl;
 			}
 		}
 	}
- 
-	//First_Improvement_Hill_Climbing_swap(neighbors_swap, bestResult, bestIndividual);
 	x_var = bestIndividual;
 	evaluate();
 	cout <<"sale--- "<< valorFac<< " " <<variabilidadObj << endl;
 	exportcsv();
-//	calculateFeasibilityDegree2();
+	calculateFeasibilityDegree2();
    exit(0);
 }
 
@@ -452,43 +541,23 @@ void MPP::exportcsv()
 {
    ofstream ofs;
    ofs.open(MPP_problem->out_filename.c_str());
-   ofs << "DIA ";
-   set<int> times_selected_per_day;
-   for(int i = 0; i < MPP_problem->conf_day.size(); i++)
-     for(auto t =MPP_problem->conf_day[i].begin(); t != MPP_problem->conf_day[i].end(); t++) times_selected_per_day.insert(*t);
-   for(auto a = times_selected_per_day.begin(); a != times_selected_per_day.end(); a++)
-   {
-	   if(*a == BREAKFAST) ofs << " , DESAYUNO ";
-	   if(*a == MORNING_SNACK) ofs << " , COLACION_MATUTINA ";	
-	   if(*a == STARTER_1) ofs << " , COMIDA_ENTRADA ";	
-	   if(*a == STARTER_2) ofs << " , COMIDA_ENTRADA ";	
-	   if(*a == MAIN_COURSE_1) ofs << " , COMIDA_PRINCIPAL ";	
-	   if(*a == MAIN_COURSE_2) ofs << " , COMIDA_PRINCIPAL ";	
-	   if(*a == EVENING_SNACK) ofs << " , COLACION_VESPERTINA ";	
-	   if(*a == DINNER) ofs << " , CENA ";	
-   }
-//   ofs<<"DIA , DESAYUNO , COLACION_MATUTINA , COMIDA_ENTRADA , COMIDA_ENTRADA , COMIDA_PRINCIPAL , COMIDA_PRINCIPAL , COLACION_VESPERTINA , CENA ";
-   //ofs<<"DIA , DESAYUNO , COLACION_MATUTINA , COMIDA_ENTRADA , COMIDA_PRINCIPAL , COLACION_VESPERTINA , CENA ";
+   //ofs<<"DIA , DESAYUNO , COLACION_MATUTINA , COMIDA_ENTRADA , COMIDA_ENTRADA , COMIDA_PRINCIPAL , COMIDA_PRINCIPAL , COLACION_VESPERTINA , CENA ";
+   ofs<<"DIA , DESAYUNO , COLACION_MATUTINA , COMIDA_ENTRADA , COMIDA_PRINCIPAL , COLACION_VESPERTINA , CENA ";
     for(auto i = MPP_problem->dic_nut_id.begin(); i !=  MPP_problem->dic_nut_id.end(); i++) ofs <<" , "<<i->first ;
 	ofs<< "\n";
     
    for(int i = 0; i < nDias; i++)
    {
 	ofs << i+1;
-   	for(auto a = times_selected_per_day.begin(); a != times_selected_per_day.end(); a++)
-	  ofs<< " , "<<MPP_problem->v_times_dishes[(*a)][x_var[i*N_OPT_DAY + (*a)]].description;
+	for(int j = 0; j < N_OPT_DAY; j++)
+	  ofs<< " , "<<MPP_problem->v_times_dishes[j][x_var[i*N_OPT_DAY + j]].description;
+
     	   for(auto ij = MPP_problem->dic_nut_id.begin(); ij !=  MPP_problem->dic_nut_id.end(); ij++)
 	   {
-		ofs <<" , \" (";
-		for(int c = 0; c < MPP_problem->conf_day.size(); c++)
-		{
 		double sum_nut = 0.0;
-     		  for(auto t =MPP_problem->conf_day[c].begin(); t != MPP_problem->conf_day[c].end(); t++) 
-	              sum_nut +=MPP_problem->v_times_dishes[*t][x_var[i*N_OPT_DAY + (*t)]].v_nutrient_value[ij->second];
-			if( c>0) ofs<<",";
-			ofs <<sum_nut ;
-		}
- 		 ofs<<") ["<<MPP_problem->v_constraints[ij->second].min<<","<<MPP_problem->v_constraints[ij->second].max<<"] \"" ;
+		for(int j = 0; j < N_OPT_DAY; j++)
+	          sum_nut +=MPP_problem->v_times_dishes[j][x_var[i*N_OPT_DAY + j]].v_nutrient_value[ij->second];
+ 		 ofs <<" , \" "<< sum_nut <<" ["<<MPP_problem->v_constraints[ij->second].min<<","<<MPP_problem->v_constraints[ij->second].max<<"] \"" ;
 	   }
 	ofs<<"\n";
    }
@@ -497,65 +566,74 @@ void MPP::exportcsv()
 
 void MPP::full_search()
 {
- vector<vector<infoDishes> > times = MPP_problem->v_times_dishes;
- vector<constraint_nutrient> &v_constraints = (MPP_problem->v_constraints);
+omp_set_num_threads(24);
  vector< vector<int> > feasible_solutions;
  vector<pair<double, double > > fit_sol;
  long int cont = 0, max_perm =1;
  //information to get each permutation of the options-feasible space..
  fill(x_var.begin(), x_var.end(),0);
  vector<int> v_max_opt;
- for(int max_opt = 0; max_opt < MPP_problem->time_conf.size(); max_opt++)
+ for(int max_opt = 0; max_opt < N_OPT_DAY; max_opt++)
  {
-   if( MPP_problem->time_conf[max_opt].empty()) continue;
    int opt_s = (int)MPP_problem->v_times_dishes[max_opt].size();
    max_perm *= opt_s;
    v_max_opt.push_back(opt_s);
  }
+ 
  cout << max_perm<<endl;
  evaluate();
- pair< double, double> bestResult = make_pair(valorFac, -variabilidadObj);
+ pair< double, double> bestResult = make_pair(valorFac, variabilidadObj);
  vector<int> x_best = x_var;
+ vector<vector<infoDishes> > times = MPP_problem->v_times_dishes;
+
  int num_nutr = (int)MPP_problem->v_constraints.size();
- int day_constraints = (int)MPP_problem->v_constraint_day.size();
+ vector<constraint_nutrient> &v_constraints = (MPP_problem->v_constraints);
  for(long cont = 0; cont < max_perm; cont++)
  {
-   if(cont > 0 ) my_next_permutation(x_var, v_max_opt);
-   double in_valorFac = 0.0;
-   for (int j = 0; j < day_constraints; j++)
-   {
-      double accum_nut = 0.0;
-      int index = MPP_problem->v_constraint_day[j];
-      for(unsigned int k = 0; k < MPP_problem->time_conf.size(); k++)
+       if(cont > 0 ) my_next_permutation(x_var, v_max_opt);
+  // vector<vector<int>> parallel_x_var;
+  // for(long i = 0; i < (long)1e8 && cont < max_perm; i++, cont++) 
+  // {
+  //      parallel_x_var.push_back(x_var);
+  // }
+   int day_constraints = (int)MPP_problem->v_constraint_day.size();
+ //  #pragma omp parallel for shared(bestResult, x_best, feasible_solutions, fit_sol)
+   //for(long i = 0; i < parallel_x_var.size(); i++)
+   //{ 
+       double valorFac = 0.0;
+        for (int j = 0; j < day_constraints; j++)
+        {
+          double accum_nut = 0.0;
+          int index = MPP_problem->v_constraint_day[j];
+           for(unsigned int k = 0; k < N_OPT_DAY; k++)
+                 accum_nut += MPP_problem->v_times_dishes[k][x_var[k]].v_nutrient_value[index];
+           double minv = v_constraints[index].min, maxv = v_constraints[index].max;
+           valorFac += (accum_nut < minv)?((minv - accum_nut)/minv)*((minv - accum_nut)/minv)*WEIGHT_DAY:0;
+           valorFac += (accum_nut > maxv)?((accum_nut - maxv)/maxv)*((accum_nut - maxv)/maxv)*WEIGHT_DAY:0;
+           if(valorFac > bestResult.first) break; //first optimization..
+        }
+      double current = valorFac;
+      if( current < bestResult.first)
       {
-         if(MPP_problem->time_conf[k].empty()) continue;
-         accum_nut += times[k][x_var[k]].v_nutrient_value[index];
-      }	   
-      double minv = v_constraints[index].min;
-      double maxv = v_constraints[index].max;
-      double middle = (maxv+minv)*0.5;
-           in_valorFac += (accum_nut < minv)?((minv - accum_nut)/middle)*((minv - accum_nut)/middle)*WEIGHT_DAY:0;
-           in_valorFac += (accum_nut > maxv)?((accum_nut - maxv)/middle)*((accum_nut - maxv)/middle)*WEIGHT_DAY:0;
-           if(in_valorFac > bestResult.first) break; //first optimization..
-   }
-   if( in_valorFac <= bestResult.first)
-   {
-      bestResult.first = in_valorFac;
-      variabilidadObj = calculateVariability(x_var);
-      x_best = x_var;		
-      cout << bestResult.first << " " <<-variabilidadObj<< " " <<cont<<endl;
-   }
-   if( in_valorFac == 0.0) //feasible solution
-   {
-      variabilidadObj = calculateVariability(x_var);
-      feasible_solutions.push_back(x_var);
-      fit_sol.push_back(make_pair(in_valorFac, -variabilidadObj));
-   }
-   if( (cont % (long)1e8 )== 0)
-   {
-      cout << "========\n " << (double)cont/(double)max_perm<<endl;
-      cout << bestResult.first << " " <<bestResult.second<< " " <<cont<<endl;
-   }
+//           evaluate();
+           bestResult.first = current;
+   //        bestResult.second = variabilidadObj;
+           x_best = x_var;		
+           cout << bestResult.first << " " <<bestResult.second<< " " <<cont<<endl;
+      }
+      if( current <= 1e-9) //feasible solution
+      {
+    //       evaluate();
+           feasible_solutions.push_back(x_var);
+           fit_sol.push_back(make_pair(valorFac, variabilidadObj));
+      }
+  // }
+      if( (cont % (long)1e8 )== 0)
+      {
+        cout << "========\n " << (double)cont/(double)max_perm<<endl;
+           cout << bestResult.first << " " <<bestResult.second<< " " <<cont<<endl;
+      }
+
  }
  if(feasible_solutions.empty()) 
   {
@@ -564,160 +642,62 @@ void MPP::full_search()
   }
   
    cout << bestResult.first << " " <<bestResult.second<<endl;
-
-
    ofstream ofs;
    ofs.open(MPP_problem->out_filename.c_str());
-   ofs << "DIA ";
-   set<int> times_selected_per_day;
-   for(int i = 0; i < MPP_problem->conf_day.size(); i++)
-     for(auto t =MPP_problem->conf_day[i].begin(); t != MPP_problem->conf_day[i].end(); t++) times_selected_per_day.insert(*t);
-   for(auto a = times_selected_per_day.begin(); a != times_selected_per_day.end(); a++)
-   {
-	   if(*a == BREAKFAST) ofs << " , DESAYUNO ";
-	   if(*a == MORNING_SNACK) ofs << " , COLACION_MATUTINA ";	
-	   if(*a == STARTER_1) ofs << " , COMIDA_ENTRADA ";	
-	   if(*a == STARTER_2) ofs << " , COMIDA_ENTRADA ";	
-	   if(*a == MAIN_COURSE_1) ofs << " , COMIDA_PRINCIPAL ";	
-	   if(*a == MAIN_COURSE_2) ofs << " , COMIDA_PRINCIPAL ";	
-	   if(*a == EVENING_SNACK) ofs << " , COLACION_VESPERTINA ";	
-	   if(*a == DINNER) ofs << " , CENA ";	
-   }
-//   ofs<<"DIA , DESAYUNO , COLACION_MATUTINA , COMIDA_ENTRADA , COMIDA_ENTRADA , COMIDA_PRINCIPAL , COMIDA_PRINCIPAL , COLACION_VESPERTINA , CENA ";
-   //ofs<<"DIA , DESAYUNO , COLACION_MATUTINA , COMIDA_ENTRADA , COMIDA_PRINCIPAL , COLACION_VESPERTINA , CENA ";
-    for(auto i = MPP_problem->dic_nut_id.begin(); i !=  MPP_problem->dic_nut_id.end(); i++) ofs <<" , "<<i->first ;
-	ofs<< "\n";
-  for(int j = 0; j <   feasible_solutions.size(); j++)
-  {
-   x_var = feasible_solutions[j];
-   for(int i = 0; i < nDias; i++)
-   {
-	ofs << fit_sol[j].first<<"-"<<fit_sol[j].second;
-   	for(auto a = times_selected_per_day.begin(); a != times_selected_per_day.end(); a++)
-	  ofs<< " , "<<MPP_problem->v_times_dishes[(*a)][x_var[i*N_OPT_DAY + (*a)]].description;
-    	   for(auto ij = MPP_problem->dic_nut_id.begin(); ij !=  MPP_problem->dic_nut_id.end(); ij++)
-	   {
-		ofs <<" , \" (";
-		for(int c = 0; c < MPP_problem->conf_day.size(); c++)
-		{
-		double sum_nut = 0.0;
-     		  for(auto t =MPP_problem->conf_day[c].begin(); t != MPP_problem->conf_day[c].end(); t++) 
-	              sum_nut +=MPP_problem->v_times_dishes[*t][x_var[i*N_OPT_DAY + (*t)]].v_nutrient_value[ij->second];
-			if( c>0) ofs<<",";
-			ofs <<sum_nut ;
-		}
- 		 ofs<<") ["<<MPP_problem->v_constraints[ij->second].min<<","<<MPP_problem->v_constraints[ij->second].max<<"] \"" ;
-	   }
+   ofs<<"Factibilidad , Variabilidad , DESAYUNO , COLACION_MATUTINA , COMIDA_ENTRADA , COMIDA_ENTRADA , COMIDA_PRINCIPAL , COMIDA_PRINCIPAL , COLACION_VESPERTINA , CENA \n";
+ ///exporting solutions....
+ for(int i = 0; i < feasible_solutions.size(); i++)
+ {
+    x_var=feasible_solutions[i];
+    evaluate();
+    ofs << this->valorFac << " , "<< this->variabilidadObj<< " , ";
+    for(int j = 0; j < feasible_solutions[i].size(); j++)
+    {
+	for(int j = 0; j < N_OPT_DAY; j++) ofs<< " , "<<MPP_problem->v_times_dishes[j][x_var[i*N_OPT_DAY + j]].description;
 	ofs<<"\n";
-   }
-  }
-   ofs.close();
+    } 
+    ofs.close();
+ }
 }
-double MPP::init_incremental_evaluation(vector<vector< double > > &globalPlan, vector< vector< vector<double> > > &nutriment_per_day, vector<int> &sol)
-{ 
+double MPP::init_incremental_evaluation(vector<double> &globalPlan, vector< vector<double> > &nutriment_per_day, vector<int> &sol)
+{
 	int num_nutr = (int)MPP_problem->v_constraints.size();
 	vector<constraint_nutrient> &v_constraints = (MPP_problem->v_constraints);
         vector<int> &v_constraint_global = MPP_problem->v_constraint_global, &v_constraint_day = MPP_problem->v_constraint_day;
-	globalPlan.clear();
-	nutriment_per_day.clear();
-        globalPlan.assign((int)MPP_problem->conf_day.size(),vector<double> (num_nutr, 0.0 ));
-	nutriment_per_day.assign( (int)MPP_problem->conf_day.size(), vector<vector<double> > (nDias, vector<double> (num_nutr, 0)));
+        globalPlan.assign(num_nutr, 0.0);
+	nutriment_per_day.assign(nDias, vector<double> (num_nutr, 0));
         double unfeasibility_next  = 0.0;
-        for(int a = 0; a < MPP_problem->conf_day.size(); a++)
+	for(int j = 0; j < num_nutr; j++)
 	{
- 	  for(int j = 0; j < num_nutr; j++)
-	  {
 	   for(int i = 0; i < nDias; i++)
 	   {
-		 for(int b = 0; b < MPP_problem->conf_day[a].size(); b++)
-		 {
-		   int k = MPP_problem->conf_day[a][b];
-	    	   nutriment_per_day[a][i][j] += MPP_problem->v_times_dishes[k][sol[i*N_OPT_DAY + k]].v_nutrient_value[j];
-		 }
-	        globalPlan[a][j] += nutriment_per_day[a][i][j]; 	
+	   	for(int k = 0; k < N_OPT_DAY; k++)
+	    	   nutriment_per_day[i][j] += MPP_problem->v_times_dishes[k][sol[i*N_OPT_DAY + k]].v_nutrient_value[j];
+	        globalPlan[j] += nutriment_per_day[i][j]; 	
+
 	        if( v_constraints[j].type == DIARIA)
                 {
-                   double minv = v_constraints[j].min;
-                   double maxv = v_constraints[j].max;
+                   double minv = v_constraints[j].min-EPSILON;
+                   double maxv = v_constraints[j].max+EPSILON;
 	  	   double middle = (maxv+minv)*0.5;
-	           double nut = nutriment_per_day[a][i][j];
-	           if( nut < minv) unfeasibility_next += ((minv - nut)/middle)*((minv - nut)/middle)*WEIGHT_DAY;
-	           else if (nut > maxv) unfeasibility_next +=((nut - maxv)/middle)*((nut - maxv)/middle)*WEIGHT_DAY;
+	           double nut = nutriment_per_day[i][j];
+	           if( nut < minv) unfeasibility_next+= ((minv - nut)/middle)*((minv - nut)/middle)*WEIGHT_DAY;
+	           else if (nut > maxv) unfeasibility_next+=((nut - maxv)/middle)*((nut - maxv)/middle)*WEIGHT_DAY;
                 }
 	   }
 	   if( v_constraints[j].type == GLOBAL)
            {
-                   double minv = v_constraints[j].min;
-                   double maxv = v_constraints[j].max;
+                   double minv = v_constraints[j].min-EPSILON;
+                   double maxv = v_constraints[j].max+EPSILON;
 	  	   double middle = (maxv+minv)*0.5;
-	           double nut = globalPlan[a][j];
-	           if( nut < minv) unfeasibility_next += ((middle - nut)/middle)*((middle - nut)/middle);
-	           else if (nut > maxv) unfeasibility_next += ((nut - middle)/middle)*((nut - middle)/middle);
+	           double nut = globalPlan[j];
+	           if( nut < minv) unfeasibility_next+= ((minv - nut)/middle)*((minv - nut)/middle);
+	           else if (nut > maxv) unfeasibility_next+=((nut - maxv)/middle)*((nut - maxv)/middle);
             }
-	  }
 	}
    return unfeasibility_next;
 }
-void MPP::calculateFeasibilityDegree(){
-	valorFac = 0.0;
-	int num_nutr = (int)MPP_problem->v_constraints.size();
-	vector<constraint_nutrient> &v_constraints = (MPP_problem->v_constraints);
-	badDays.clear();
-
-	double heaviestValue = 0;
-	heaviestNut = -1;
-        for(int a = 0; a < MPP_problem->conf_day.size(); a++)
-        {
-           for(int i = 0; i < num_nutr; i++)
-           {
-              double minv = v_constraints[i].min;
-              double maxv = v_constraints[i].max;
-	      double middle = (maxv+minv)*0.5;
-              double globalNutr = 0.0;
-	      for(int j = 0; j < nDias; j++)
-	      {
-	         double dayNutr = 0.0;
-		 for(int b = 0; b < MPP_problem->conf_day[a].size(); b++)
-		 {
-		   int k = MPP_problem->conf_day[a][b];
-	   	   dayNutr += MPP_problem->v_times_dishes[k][x_var[j*N_OPT_DAY+k]].v_nutrient_value[i];
-		 }
-	   	globalNutr += dayNutr;
-	   	if(v_constraints[i].type == DIARIA)
-             	{
-	               if(dayNutr  < minv) valorFac += ((minv - dayNutr)/middle)*((minv - dayNutr)/middle)*WEIGHT_DAY, badDays.insert(j);
-	               else if (dayNutr > maxv) valorFac +=((dayNutr - maxv)/middle)*((dayNutr - maxv)/middle)*WEIGHT_DAY, badDays.insert(j);
-           	}
-	      }
-	      if(v_constraints[i].type == GLOBAL)
-              {
-	        if(globalNutr < minv)
-	        {
-	          double v = ((minv - globalNutr)/middle)*((minv - globalNutr)/middle);
-	          valorFac += v;
-	          if( v >  heaviestValue)
-	          {
-	            heaviestValue = v;
-	            heaviestNut = i;
-	            heaviestType = -1;
-	          }
-	        }
-	        else if (globalNutr > maxv)
-	        {
-	          double v =((globalNutr - maxv)/middle)*((globalNutr - maxv)/middle);
-	          valorFac +=v;
-	          if( v >  heaviestValue)
-	          {
-	            heaviestValue = v;
-	            heaviestNut = i;
-	            heaviestType = 1;
-	          }
-	        }
-              }
-           }
-	}
-}
-double MPP::inc_eval_feas_time( vector< vector<double> > &globalPlan, vector< vector<vector<double> > > &nutriment_per_day, vector<int> &current_sol, Neighbor &new_neighbor, double current_infeasibility)
+double MPP::inc_eval_feas_time(vector<double> &globalPlan, vector<vector<double> > &nutriment_per_day, vector<int> &current_sol, Neighbor &new_neighbor, double current_infeasibility)
 {
     int num_nutr = (int)MPP_problem->v_constraints.size();
     vector<constraint_nutrient> &v_constraints = (MPP_problem->v_constraints);
@@ -726,59 +706,50 @@ double MPP::inc_eval_feas_time( vector< vector<double> > &globalPlan, vector< ve
     int day =  new_neighbor.variable/N_OPT_DAY;
     int time = new_neighbor.variable%N_OPT_DAY;
     double new_partial_infeasibility = 0.0, original_partial_infeasibility = 0.0 ;
-   for(int b = 0; b < MPP_problem->time_conf[time].size(); b++)
-   {	
-	int a = MPP_problem->time_conf[time][b];
     for(unsigned int j = 0; j < num_nutr; j++)
     {
        	//update sumatory of nutriments....
 	double new_nut_value = (-v_times_dishes[time][current_sol[new_neighbor.variable]].v_nutrient_value[j] + v_times_dishes[time][new_neighbor.newValue].v_nutrient_value[j]);
-	new_nut_value = (fabs(new_nut_value)>EPSILON)?new_nut_value:0.0;
        if(v_constraints[j].type == DIARIA)
        {
-          double minv = v_constraints[j].min;
-          double maxv = v_constraints[j].max;
+          double minv = v_constraints[j].min-EPSILON;
+          double maxv = v_constraints[j].max+EPSILON;
 	  double middle = (maxv+minv)*0.5;
-	  double nut = nutriment_per_day[a][day][j] + new_nut_value;
-  	  double original_nut = nutriment_per_day[a][day][j];	
-	  if( nut < minv)new_partial_infeasibility+= ((minv- nut)/middle)*((minv - nut)/middle)*WEIGHT_DAY;
+	  double nut = nutriment_per_day[day][j] + new_nut_value;
+  	  double original_nut = nutriment_per_day[day][j];	
+	  if( nut < minv) new_partial_infeasibility+= ((minv - nut)/middle)*((minv - nut)/middle)*WEIGHT_DAY;
 	  else if (nut > maxv) new_partial_infeasibility+=((nut - maxv)/middle)*((nut - maxv)/middle)*WEIGHT_DAY;
-	  if( original_nut  < minv)original_partial_infeasibility += ((minv - original_nut)/middle)*((minv - original_nut)/middle)*WEIGHT_DAY;
+	  if( original_nut  < minv) original_partial_infeasibility += ((minv - original_nut)/middle)*((minv - original_nut)/middle)*WEIGHT_DAY;
 	  else if (original_nut > maxv) original_partial_infeasibility +=((original_nut - maxv)/middle)*((original_nut - maxv)/middle)*WEIGHT_DAY;
        }
        else if(v_constraints[j].type == GLOBAL)
        { 
-          double minv = v_constraints[j].min;
-          double maxv = v_constraints[j].max;
+          double minv = v_constraints[j].min-EPSILON;
+          double maxv = v_constraints[j].max+EPSILON;
 	  double middle = (maxv+minv)*0.5;
-          double nut = globalPlan[a][j] + new_nut_value;
-          double original_nut = globalPlan[a][j];
+          double nut = globalPlan[j] + new_nut_value;
+          double original_nut = globalPlan[j];
           if(nut < minv) new_partial_infeasibility+= ((minv - nut)/(middle))*((minv - nut)/(middle));
           else if (nut > maxv) new_partial_infeasibility+=((nut - maxv)/middle)*((nut - maxv)/middle);
-          if(original_nut < minv) original_partial_infeasibility += ((minv - original_nut)/(middle))*((minv- original_nut)/(middle));
+          if(original_nut < minv) original_partial_infeasibility += ((minv - original_nut)/(middle))*((minv - original_nut)/(middle));
           else if ( original_nut > maxv) original_partial_infeasibility +=((original_nut - maxv)/middle)*((original_nut - maxv)/middle);
        }
-     }
-   }
+    }
     return  current_infeasibility - original_partial_infeasibility + new_partial_infeasibility;
 }
-void MPP::update_data_incremental_eval(vector< vector<double> > &globalPlan, vector< vector<vector<double> > > &nutriment_per_day, vector<int> &current_sol, Neighbor &new_neighbor)
+void MPP::update_data_incremental_eval(vector<double> &globalPlan, vector<vector<double> > &nutriment_per_day, vector<int> &current_sol, Neighbor &new_neighbor)
 {
     int num_nutr = (int)MPP_problem->v_constraints.size();
     vector<vector<infoDishes> > &v_times_dishes = (MPP_problem->v_times_dishes);
     int day =  new_neighbor.variable/N_OPT_DAY;
     int time = new_neighbor.variable%N_OPT_DAY;
-   for(int b = 0; b < MPP_problem->time_conf[time].size(); b++)
-   {	
-    int a = MPP_problem->time_conf[time][b];
     for(unsigned int j = 0; j < num_nutr; j++)//check new neighbor..
     {
        	//update sumatory of nutriments....
 	double diff = (-v_times_dishes[time][current_sol[new_neighbor.variable]].v_nutrient_value[j] + v_times_dishes[time][new_neighbor.newValue].v_nutrient_value[j]);
-        nutriment_per_day[a][day][j] += diff;
-	globalPlan[a][j] += diff;
+        nutriment_per_day[day][j] += diff;
+	globalPlan[j] += diff;
     }
-   }
     current_sol[new_neighbor.variable]=new_neighbor.newValue;
 }
 void MPP::my_next_permutation(vector<int> &perm, vector<int> &v_max_opt)
@@ -794,10 +765,11 @@ void MPP::my_next_permutation(vector<int> &perm, vector<int> &v_max_opt)
          }
       }
 }
+
 pair<double, double> MPP::First_Improvement_Hill_Climbing(vector<Neighbor> &neighbors, vector<int> &current_sol)
 {
-   vector< vector<double> > globalPlan;
-   vector< vector< vector<double> > > nutriment_per_day;
+   vector<double> globalPlan;
+   vector< vector<double> > nutriment_per_day;
 
    double current_infeasibility = init_incremental_evaluation(globalPlan, nutriment_per_day, current_sol);
    evaluate();
@@ -810,18 +782,23 @@ pair<double, double> MPP::First_Improvement_Hill_Climbing(vector<Neighbor> &neig
      for (int i = 0; i < neighbors.size(); i++)
      {
         //incremental evaluation...
-	double new_infeasibility =  inc_eval_feas_time(globalPlan, nutriment_per_day, current_sol, neighbors[i], current_infeasibility);
+	int tmp2  = current_sol[neighbors[i].variable];
+	current_sol[neighbors[i].variable] = neighbors[i].newValue;
+	evaluate();
+    current_sol[neighbors[i].variable] = tmp2;
 
+	double new_infeasibility = inc_eval_feas_time(globalPlan, nutriment_per_day, current_sol, neighbors[i], current_infeasibility);
+	cout << fabs(valorFac - new_infeasibility)<<endl;
+	
 	if( new_infeasibility < current_infeasibility)
 	{
 	   improved = true;
 	   update_data_incremental_eval(globalPlan, nutriment_per_day, current_sol, neighbors[i]);
 	   current_infeasibility = new_infeasibility;
-//	   evaluate();
-	//   if(fabs(new_infeasibility - valorFac) >0.3) exit(0);
 	}
-	else if(fabs(new_infeasibility - current_infeasibility) < EPSILON) //to check: epsilon...
+	else if(new_infeasibility == current_infeasibility) //to check: epsilon...
         { 
+	    //double new_variability = calculateVariability(current_sol, neighbors[i]);
 	    int tmp = current_sol[neighbors[i].variable];
 	    current_sol[neighbors[i].variable] = neighbors[i].newValue;
 	    double new_variability = calculateVariability(current_sol);
@@ -830,15 +807,16 @@ pair<double, double> MPP::First_Improvement_Hill_Climbing(vector<Neighbor> &neig
 	   {	
 	      improved = true;
 	      current_variability = new_variability;
+	   //   current_sol[neighbors[i].variable] = neighbors[i].newValue;
 	   }
 	   else 
 	    current_sol[neighbors[i].variable] = tmp;
         }
+//   else 
+//	    current_sol[neighbors[i].variable] = tmp2;
       }
     }
-	evaluate();
-    return make_pair(valorFac ,-variabilidadObj);//this avoid a numerical error provoked by the incremental evaluation..
-    //return make_pair(current_infeasibility, -current_variability);
+    return make_pair(current_infeasibility, -current_variability);
 }
 double MPP::calculateVariability()
 {
@@ -846,34 +824,43 @@ double MPP::calculateVariability()
 double MPP::calculateVariability(vector<int> &current_sol)
 {
    vector<vector<infoDishes> > &v_times_dishes = MPP_problem->v_times_dishes;
-   double variability_day = 0.0, variability_global = 0.0, variability_cat_day=0.0, variability_fav=0.0;
-   int max_variability_day =0;
-   
-    bool gl_ids[5000]={false};
-    int cont = 0;
-   for(int d = 0; d < nDias; d++)
-   {
-    	bool day_ids[5000]={false};
-	int cont2 = 0;
-	for(int i = 0; i < MPP_problem->time_conf.size(); i++)
+   double variability_day= 0.0, variability_global = 0.0;
+       int min_diff = nDias;
+    for(int k = 0; k < N_OPT_DAY; k++)
+    {
+       vector<int> cont_d(nDias, 0);
+       vector<int> last_d((int)v_times_dishes[k].size(), -1);
+       for(int i = 0 ; i < nDias; i++)
+       {
+	//Daily constraints.....
+	   if(k == MORNING_SNACK && day_constraint(v_times_dishes[MORNING_SNACK][current_sol[i*N_OPT_DAY + MORNING_SNACK]], v_times_dishes[MORNING_SNACK][current_sol[i*N_OPT_DAY + EVENING_SNACK]]))
+		variability_day++;
+	//PONER RESTRICCIÓN POR DÍA DE LA ENTRADAS Y DE LOS PLATILLOS FUERTE...!!!!!!!!!!!
+	if( k == MAIN_COURSE)
 	{
-	   if(MPP_problem->time_conf[i].empty())continue;
-	   max_variability_day++;
-	   int id = v_times_dishes[i][current_sol[d*N_OPT_DAY + i]].description;
-	   if(!gl_ids[id])
+	   int id_dish = current_sol[i*N_OPT_DAY + k];//v_times_dishes[k][current_sol[i*N_OPT_DAY + k]];
+	   if(last_d[id_dish] != -1 )
 	   {
-	      gl_ids[id]=true;
-	      cont++;
+	      int diff = i - last_d[id_dish];
+	      cont_d[diff]++;
+	      min_diff =  min(min_diff, diff);
 	   }
-	   if( !day_ids[id])
-	   {
-	      day_ids[id]= true;
-	     cont2++;
-	   }
+	   last_d[id_dish] = i;
 	}
-	variability_day += cont2;
-   }
-  return variability_day + cont;
+       }
+//		cout << min_diff<<endl;
+	if( k == MAIN_COURSE)
+	{
+
+	if(min_diff != nDias)
+//	if( min_diff > 2) variability_global += 100;
+	variability_global += min_diff;//cont_d[min_diff];//cont_d[min_diff]*(min_diff+1);
+	}
+    }
+
+// cout << variability_global << "____"<< endl;
+ return variability_global;
+ return 1e3*variability_day + variability_global;
 }
 bool MPP::day_constraint(infoDishes &dish1, infoDishes &dish2)
 {
@@ -882,46 +869,4 @@ bool MPP::day_constraint(infoDishes &dish1, infoDishes &dish2)
    else if(dish1.category != dish2.category)
 	if(dish1.description != dish2.description) return true;
    return false;
-}
-pair<double, double> MPP::First_Improvement_Hill_Climbing_swap(vector<Neighbor_swap> &neighbors, pair<double, double> &bestResult, vector<int> &bestIndividual)
-{
-  bool improved= true;
-  vector<int> current = bestIndividual;
-  pair<double, double> currentResult = bestResult;
-	cout <<"entra... " << currentResult.second<<endl;
-  while(improved)
-  {
-     improved = false;
-     random_shuffle(neighbors.begin(), neighbors.end());
-     for(int i = 0; i < neighbors.size(); i++)
-     {
-	for(int ii = 0; ii < MPP_problem->time_conf.size(); ii++)
-	{
-	   if(MPP_problem->time_conf[ii].empty())continue;
-	   swap(current[neighbors[i].day1*N_OPT_DAY + ii], current[neighbors[i].day2*N_OPT_DAY + ii] );
-	}
-	currentResult.second = -calculateVariability(current);
-	if (currentResult >= bestResult)
-        {
-	   for(int ii = 0; ii < MPP_problem->time_conf.size(); ii++)
-	   {
-	      if(MPP_problem->time_conf[ii].empty())continue;
-	      swap(current[neighbors[i].day1*N_OPT_DAY + ii], current[neighbors[i].day2*N_OPT_DAY + ii] );
-	   }
-//			current = bestIndividual;
-	}
-	else 
-	{
-            improved = true;
-	    bestResult = currentResult;
-	    for(int ii = 0; ii < MPP_problem->time_conf.size(); ii++)
-	    {
-	      if(MPP_problem->time_conf[ii].empty())continue;
-	      swap(bestIndividual[neighbors[i].day1*N_OPT_DAY + ii], bestIndividual[neighbors[i].day2*N_OPT_DAY + ii] );
-	   }
-	}
-     }
-  }
-	cout <<"sale... " << bestResult.second<<endl;
-  return bestResult;
 }

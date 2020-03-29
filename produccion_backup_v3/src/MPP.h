@@ -33,7 +33,7 @@ using namespace std;
 #define WEIGHT_DAY 1.0e6
 #define DAYS_FAVORITE 7*3
 #define DAYS_NO_FAVORITE 7*4
-#define ITERATIONS_LS 5000
+#define ITERATIONS_LS 3000
 //extern volatile bool finished;
 extern int crossoverType;
 extern int nDias;

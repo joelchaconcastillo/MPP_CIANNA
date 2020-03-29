@@ -848,32 +848,50 @@ double MPP::calculateVariability(vector<int> &current_sol)
    vector<vector<infoDishes> > &v_times_dishes = MPP_problem->v_times_dishes;
    double variability_day = 0.0, variability_global = 0.0, variability_cat_day=0.0, variability_fav=0.0;
    int max_variability_day =0;
+   unordered_set<int> gl_ids;
+   unordered_map<int, int> min_dist_day_id, last_day;
+   unordered_map<int, bool> favorite;
    
-    bool gl_ids[5000]={false};
-    int cont = 0;
    for(int d = 0; d < nDias; d++)
    {
-    	bool day_ids[5000]={false};
-	int cont2 = 0;
+        unordered_set<int> day_ids, snacks_cat, starter_cat, main_course_cat;
 	for(int i = 0; i < MPP_problem->time_conf.size(); i++)
 	{
 	   if(MPP_problem->time_conf[i].empty())continue;
 	   max_variability_day++;
 	   int id = v_times_dishes[i][current_sol[d*N_OPT_DAY + i]].description;
-	   if(!gl_ids[id])
-	   {
-	      gl_ids[id]=true;
-	      cont++;
-	   }
-	   if( !day_ids[id])
-	   {
-	      day_ids[id]= true;
-	     cont2++;
-	   }
+	   favorite[id] =v_times_dishes[i][current_sol[d*N_OPT_DAY + i]].favorite;
+	   day_ids.insert(id);
+	   gl_ids.insert(id);
+	   if( last_day.find(id) != last_day.end() && i == MAIN_COURSE_1)
+	      min_dist_day_id[id] = min(min_dist_day_id[id], last_day[id]);
+	   else min_dist_day_id[id] = nDias;
+	      last_day[id] = d;
+
+	   //cat by snacks..
+	   if( i == MORNING_SNACK || i == EVENING_SNACK) snacks_cat.insert(id);
+        //cat by starter..
+	   else if( i == STARTER_1 || i == STARTER_2) starter_cat.insert(id);
+	//cat by main_course....
+	   else if( i == MAIN_COURSE_1|| i == MAIN_COURSE_2) main_course_cat.insert(id);
 	}
-	variability_day += cont2;
+	variability_cat_day += snacks_cat.size() + starter_cat.size() + main_course_cat.size();
+	variability_day +=day_ids.size();
    }
-  return variability_day + cont;
+   variability_global = gl_ids.size();
+   for(auto i = min_dist_day_id.begin(); i != min_dist_day_id.end(); i++)
+    {
+	if(favorite[i->first] && i->second > DAYS_FAVORITE )
+	  variability_fav += nDias;
+	else if(!favorite[i->first] && i->second > DAYS_NO_FAVORITE )
+	  variability_fav += nDias;
+	else variability_fav += i->second;
+    }
+   variability_day /= (max_variability_day);
+   variability_global /=(MPP_problem->max_description_id);
+   variability_fav /= (nDias*MPP_problem->max_description_id);
+   variability_cat_day /=(nDias*6);
+   return variability_day*10.0 + variability_global*0.5 + variability_fav*5.0 + variability_cat_day*0.5;
 }
 bool MPP::day_constraint(infoDishes &dish1, infoDishes &dish2)
 {
