@@ -352,19 +352,18 @@ void MPP::localSearch( ) {
 	pair<double, double> bestResult = make_pair(valorFac, -variabilidadObj);
 
 	for (int i = 0; i < ITERATIONS_LS; i++){
+	evaluate();	
 		pair<double, double> currentResult = First_Improvement_Hill_Climbing(neighbors, x_var);
-//		currentResult = First_Improvement_Hill_Climbing_swap(neighbors_swap, currentResult, x_var);
-		
+		currentResult = First_Improvement_Hill_Climbing_swap(neighbors_swap, currentResult, x_var);
+	evaluate();	
 		if (currentResult >= bestResult){
 			x_var = bestIndividual;
 		} else {
 			bestResult = currentResult;
+			bestResult = make_pair(valorFac, -variabilidadObj);
 			bestIndividual = x_var;
-	evaluate();	
 			cout << currentResult.first << " " << currentResult.second <<" " << badDays.size()<< " " << i<<endl;
 		}
-
-		evaluate();
 		if (badDays.empty()){
 			int selectedDay = -1;
 			if (heaviestNut != -1){
@@ -381,9 +380,8 @@ void MPP::localSearch( ) {
 			} else {
 				selectedDay = rand() % nDias;
 			}
-//	cout << selectedDay<< " " << heaviestNut<<endl;
-			for(int k = 0; k < N_OPT_DAY; k++) x_var[selectedDay*N_OPT_DAY + k] = MPP_problem->random_dish(k);
-
+			perturb_day(x_var, selectedDay);
+		//	swap_days(x_var, rand() % nDias, rand() % nDias);
 		} else {
 	//		cout << "Dias: " << badDays.size() << endl;
 			vector<int> v;
@@ -848,32 +846,57 @@ double MPP::calculateVariability(vector<int> &current_sol)
    vector<vector<infoDishes> > &v_times_dishes = MPP_problem->v_times_dishes;
    double variability_day = 0.0, variability_global = 0.0, variability_cat_day=0.0, variability_fav=0.0;
    int max_variability_day =0;
-   
-    bool gl_ids[5000]={false};
-    int cont = 0;
+   int &max_description_id = MPP_problem->max_description_id;
+   used_IDs.assign(MPP_problem->max_description_id, false); 
+   double v_day = 0, v_global = 0, v_global_id = 0, v_global_cat = 0;
+   int mem[N_OPT_DAY*nDias]; //zero default...
+   int mem_cat[N_OPT_DAY*nDias]; //zero default...
+   int last_day_seen[N_OPT_DAY*max_description_id];
+   int last_day_seen_cat[N_OPT_DAY*3];
+//   bool fav[N_OPT_DAY*max_description_id];
+   int mindiff[N_OPT_DAY], mindiff_cat[N_OPT_DAY];
+   fill_n(mindiff, N_OPT_DAY, nDias);
+   fill_n(mindiff_cat, N_OPT_DAY, nDias);
+
+   fill_n(last_day_seen, N_OPT_DAY*max_description_id, -1);
+   fill_n(last_day_seen_cat, N_OPT_DAY*3, -1);
+
+   fill_n(mem, N_OPT_DAY*nDias, 0);
+   fill_n(mem_cat, N_OPT_DAY*nDias, 0);
    for(int d = 0; d < nDias; d++)
    {
-    	bool day_ids[5000]={false};
-	int cont2 = 0;
+	used_IDs_day.assign(max_description_id, false);
 	for(int i = 0; i < MPP_problem->time_conf.size(); i++)
 	{
 	   if(MPP_problem->time_conf[i].empty())continue;
-	   max_variability_day++;
 	   int id = v_times_dishes[i][current_sol[d*N_OPT_DAY + i]].description;
-	   if(!gl_ids[id])
-	   {
-	      gl_ids[id]=true;
-	      cont++;
-	   }
-	   if( !day_ids[id])
-	   {
-	      day_ids[id]= true;
-	     cont2++;
-	   }
+	   int cat = v_times_dishes[i][current_sol[d*N_OPT_DAY + i]].category;
+	  // fav[id] = v_times_dishes[i][current_sol[d*N_OPT_DAY + i]].favorite;
+	   if( !used_IDs_day[id]) used_IDs_day[id]= true,   v_day++;//differents id's per day
+//	   if(!used_IDs[id]) used_IDs[id]=true, v_global++;
+           if(last_day_seen[i*N_OPT_DAY+id] != -1)
+           {
+              int diff = d-last_day_seen[i*N_OPT_DAY+id];
+	      mem[i*N_OPT_DAY+diff]++;
+	      mindiff[i] = min(mindiff[i], diff);
+           }
+           last_day_seen[i*N_OPT_DAY + id] = d;
+	   if(last_day_seen_cat[i*3 + cat] != -1)
+           {
+              int diff = d-last_day_seen_cat[i*3 + cat];
+	      mem_cat[i*N_OPT_DAY + diff]++;
+	      mindiff_cat[i] = min(mindiff_cat[i], diff);
+           }
+           last_day_seen_cat[i*3 + cat] = d;
 	}
-	variability_day += cont2;
    }
-  return variability_day + cont;
+  for(int i = 0; i < MPP_problem->time_conf.size(); i++)
+  {
+    if(MPP_problem->time_conf[i].empty())continue;
+    v_global_id += mindiff[i] + ( 1.0 - ((double)mem[i*N_OPT_DAY + mindiff[i]]/(double)nDias));
+    v_global_cat += mindiff_cat[i] + ( 1.0 - ((double)mem_cat[i*N_OPT_DAY + mindiff_cat[i]]/(double)nDias));
+  }
+  return 100*v_day + v_global + 10*v_global_id + v_global_cat;
 }
 bool MPP::day_constraint(infoDishes &dish1, infoDishes &dish2)
 {
@@ -888,40 +911,35 @@ pair<double, double> MPP::First_Improvement_Hill_Climbing_swap(vector<Neighbor_s
   bool improved= true;
   vector<int> current = bestIndividual;
   pair<double, double> currentResult = bestResult;
-	cout <<"entra... " << currentResult.second<<endl;
+//	cout <<"entra... " << currentResult.second<<endl;
   while(improved)
   {
      improved = false;
      random_shuffle(neighbors.begin(), neighbors.end());
      for(int i = 0; i < neighbors.size(); i++)
      {
-	for(int ii = 0; ii < MPP_problem->time_conf.size(); ii++)
-	{
-	   if(MPP_problem->time_conf[ii].empty())continue;
-	   swap(current[neighbors[i].day1*N_OPT_DAY + ii], current[neighbors[i].day2*N_OPT_DAY + ii] );
-	}
+	swap_days(current, neighbors[i].day1, neighbors[i].day2);
 	currentResult.second = -calculateVariability(current);
 	if (currentResult >= bestResult)
         {
-	   for(int ii = 0; ii < MPP_problem->time_conf.size(); ii++)
-	   {
-	      if(MPP_problem->time_conf[ii].empty())continue;
-	      swap(current[neighbors[i].day1*N_OPT_DAY + ii], current[neighbors[i].day2*N_OPT_DAY + ii] );
-	   }
-//			current = bestIndividual;
+	    swap_days(current, neighbors[i].day1, neighbors[i].day2);
 	}
 	else 
 	{
             improved = true;
 	    bestResult = currentResult;
-	    for(int ii = 0; ii < MPP_problem->time_conf.size(); ii++)
-	    {
-	      if(MPP_problem->time_conf[ii].empty())continue;
-	      swap(bestIndividual[neighbors[i].day1*N_OPT_DAY + ii], bestIndividual[neighbors[i].day2*N_OPT_DAY + ii] );
-	   }
+	    swap_days(bestIndividual, neighbors[i].day1, neighbors[i].day2);
 	}
      }
   }
-	cout <<"sale... " << bestResult.second<<endl;
+//	cout <<"sale... " << bestResult.second<<endl;
   return bestResult;
+}
+void MPP::swap_days(vector<int> &data, int day1, int day2)
+{
+   for(int ii = 0; ii < MPP_problem->time_conf.size(); ii++)
+   {
+      if(MPP_problem->time_conf[ii].empty())continue;
+      swap(data[day1*N_OPT_DAY + ii], data[day2*N_OPT_DAY + ii] );
+   }
 }

@@ -33,7 +33,7 @@ using namespace std;
 #define WEIGHT_DAY 1.0e6
 #define DAYS_FAVORITE 7*3
 #define DAYS_NO_FAVORITE 7*4
-#define ITERATIONS_LS 5000
+#define ITERATIONS_LS 100000
 //extern volatile bool finished;
 extern int crossoverType;
 extern int nDias;
@@ -123,6 +123,9 @@ class MPP{
 
 		void update_data_incremental_eval(vector< vector<double> > &globalPlan, vector< vector<vector<double> > > &nutriment_per_day, vector<int> &current_sol, Neighbor &new_neighbor);
 
+		void swap_days(vector<int> &data, int day1, int day2);
+		inline void perturb_day(vector<int> &data, int day){ for(int k = 0; k < N_OPT_DAY; k++) data[day*N_OPT_DAY + k] = MPP_problem->random_dish(k);}
+
 		double calculateVariability(vector<int> &current_sol);
 
 		double calculateVariability();
@@ -130,6 +133,7 @@ class MPP{
 		int heaviestNut, heaviestType;
 		double valorFac, variabilidadObj;//factibility and variability of the current solution..
 		set<int> badDays;
+		vector<bool> used_IDs, used_IDs_day;
 };
 
 #endif
