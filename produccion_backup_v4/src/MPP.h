@@ -7,7 +7,6 @@ using namespace std;
 //v_breakfast, v_morning_snack, v_starter, v_main_course, v_evening_snack, v_dinner, v_both_snack;
 #define EPSILON 1e-50
 
-#define N_CATEGORIES 3
 #define CATEGORY_1 1
 #define CATEGORY_2 2
 #define CATEGORY_BOTH 0
@@ -34,11 +33,7 @@ using namespace std;
 #define WEIGHT_DAY 1.0e6
 #define DAYS_FAVORITE 7*3
 #define DAYS_NO_FAVORITE 7*4
-#define ITERATIONS_LS 1000
-
-#define W_VAR_DAY 1000
-#define W_VAR_GLOBAL 100
-#define W_VAR_GLOBAL_CAT 1
+#define ITERATIONS_LS 5000
 //extern volatile bool finished;
 extern int crossoverType;
 extern int nDias;
@@ -124,19 +119,14 @@ class MPP{
 		void calculateFeasibilityDegree();
 		void my_next_permutation(vector<int> &perm, vector<int> &v_max_opt);
 
-		pair<double, double> init_incremental_evaluation(vector<vector< double > > &globalPlan, vector< vector< vector<double> > > &nutriment_per_day, vector<int> &sol, vector< vector< vector < int > > > &time_id_day_table, vector< vector< int> > &time_diff);
+		double init_incremental_evaluation(vector< vector<double> > &globalPlan, vector< vector< vector<double> > >&nutriment_per_day, vector<int> &sol);
 		double inc_eval_feas_time(vector< vector<double> > &globalPlan, vector< vector<vector<double> > > &nutriment_per_day, vector<int> &current_sol, Neighbor &new_neighbor, double current_infeasibility);
-
-		double inc_eval_var_time(vector<int> &sol, Neighbor &new_neighbor, double current_var, vector< vector< vector < int > > > &time_id_day_table, vector< vector<int> > &time_diff);
 
 		void update_data_incremental_eval(vector< vector<double> > &globalPlan, vector< vector<vector<double> > > &nutriment_per_day, vector<int> &current_sol, Neighbor &new_neighbor);
 
 		void swap_days(vector<int> &data, int day1, int day2);
 		inline void perturb_day(vector<int> &data, int day){ for(int k = 0; k < N_OPT_DAY; k++) data[day*N_OPT_DAY + k] = MPP_problem->random_dish(k);}
- 		inline double f(pair<int, int> data_dcn){ return ((double)data_dcn.first + ( 1.0 - ((double)data_dcn.second/(double)nDias)));}
 
-
-      		inline void update_dcn_pair(int diff, pair<int, int> &p_dcn){ if(diff < p_dcn.first)p_dcn = make_pair(diff, 1);else if(diff == p_dcn.first)p_dcn.second++; }
 		double calculateVariability(vector<int> &current_sol);
 
 		double calculateVariability();
@@ -144,6 +134,7 @@ class MPP{
 		int heaviestNut, heaviestType;
 		double valorFac, variabilidadObj;//factibility and variability of the current solution..
 		set<int> badDays;
+		vector<bool> used_IDs, used_IDs_day;
 };
 
 #endif
