@@ -356,7 +356,6 @@ void MPP::localSearch( ) {
 	for (int i = 0; i < ITERATIONS_LS; i++){
 	evaluate();	
 		pair<double, double> currentResult = First_Improvement_Hill_Climbing(neighbors, x_var);
-		if(currentResult.first==0)
 		currentResult = First_Improvement_Hill_Climbing_swap(neighbors_swap, currentResult, x_var);
 	evaluate();	
 		if (currentResult >= bestResult){
@@ -718,7 +717,7 @@ double MPP::inc_eval_feas_time( vector< vector<double> > &globalPlan, vector< ve
    }
     return  current_infeasibility - original_partial_infeasibility + new_partial_infeasibility;
 }
-void MPP::update_inc_feas(vector< vector<double> > &globalPlan, vector< vector<vector<double> > > &nutriment_per_day, vector<int> &current_sol, Neighbor &new_neighbor)
+void MPP::update_data_incremental_eval(vector< vector<double> > &globalPlan, vector< vector<vector<double> > > &nutriment_per_day, vector<int> &current_sol, Neighbor &new_neighbor)
 {
     int num_nutr = (int)MPP_problem->v_constraints.size();
     vector<vector<infoDishes> > &v_times_dishes = (MPP_problem->v_times_dishes);
@@ -735,6 +734,7 @@ void MPP::update_inc_feas(vector< vector<double> > &globalPlan, vector< vector<v
 	globalPlan[a][j] += diff;
     }
    }
+    current_sol[new_neighbor.variable]=new_neighbor.newValue;
 }
 void MPP::my_next_permutation(vector<int> &perm, vector<int> &v_max_opt)
 {
@@ -757,6 +757,7 @@ pair<double, double> MPP::First_Improvement_Hill_Climbing(vector<Neighbor> &neig
    vector< vector< int > > time_diff;
    pair<double, double> current_fit = init_incremental_evaluation(globalPlan, nutriment_per_day, current_sol, time_id_day_table, time_diff);
    evaluate();
+//	cout << calculateVariability(current_sol) << " "<<current_fit.second<<endl;
    bool improved = true;
    while(improved)
    {
@@ -764,27 +765,37 @@ pair<double, double> MPP::First_Improvement_Hill_Climbing(vector<Neighbor> &neig
      random_shuffle(neighbors.begin(), neighbors.end());
      for (int i = 0; i < neighbors.size(); i++)
      {
+   //	pair<double, double > t = init_incremental_evaluation(globalPlan, nutriment_per_day, current_sol, time_id_day_table, time_diff);
         //incremental evaluation...
 	double new_infeasibility =  inc_eval_feas_time(globalPlan, nutriment_per_day, current_sol, neighbors[i], current_fit.first);
+
 	if( new_infeasibility < current_fit.first)
 	{
 	   improved = true;
-	   update_inc_feas(globalPlan, nutriment_per_day, current_sol, neighbors[i]);
-	   update_inc_var(current_sol, current_fit.second, neighbors[i], time_id_day_table, time_diff);
-    	   current_sol[neighbors[i].variable]= neighbors[i].newValue;
+	   update_data_incremental_eval(globalPlan, nutriment_per_day, current_sol, neighbors[i]);
 	   current_fit.first = new_infeasibility;
+//	   evaluate();
 	}
 	else if(fabs(new_infeasibility - current_fit.first) < EPSILON) //to check: epsilon...
-        { continue;
-	    double new_variability = inc_eval_var_time(current_sol, neighbors[i], current_fit.second, time_id_day_table, time_diff);
-//	    double v = calculateVariability(current_sol);
+        { 
+   	    pair<double, double> t = init_incremental_evaluation(globalPlan, nutriment_per_day, current_sol, time_id_day_table, time_diff);
+	    double current_var = calculateVariability(current_sol);
+		double v = inc_eval_var_time(current_sol, neighbors[i], current_var, time_id_day_table, time_diff);
+	    //check inc_eval_var_time....
+	    int tmp = current_sol[neighbors[i].variable];
+	    current_sol[neighbors[i].variable] = neighbors[i].newValue;
+   	     t = init_incremental_evaluation(globalPlan, nutriment_per_day, current_sol, time_id_day_table, time_diff);
+	    double new_variability = calculateVariability(current_sol);
+	    
+	    cout << "___"<<new_variability<< "..."<<v << "**** "<< t.second<<endl;
+	if(fabs(v - new_variability) > 1e-2) exit(0);
 	   if(current_fit.second < new_variability)
 	   {	
 	      improved = true;
-	      update_inc_feas(globalPlan, nutriment_per_day, current_sol, neighbors[i]);
-	      update_inc_var(current_sol, current_fit.second, neighbors[i], time_id_day_table, time_diff);
-	      current_sol[neighbors[i].variable] = neighbors[i].newValue;
+	      current_fit.second = new_variability;
 	   }
+	   else 
+	    current_sol[neighbors[i].variable] = tmp;
         }
       }
     }
@@ -804,11 +815,11 @@ double MPP::calculateVariability(vector<int> &current_sol)
    double v_day = 0, v_global = 0, v_global_id = 0, v_global_cat = 0;
    vector<int> last_day_seen(N_OPT_DAY*(max_description_id+1), -1);
    vector<int> last_day_seen_cat(N_OPT_DAY*(max_description_id+1), -1);
-   vector<pair<int, int>> min_dcn(N_OPT_DAY, make_pair(nDias+1, 0)), min_dcn_cat(N_OPT_DAY, make_pair(nDias+1, 0));
+   vector<pair<int, int>> min_dcn(N_OPT_DAY, make_pair(nDias, 0)), min_dcn_cat(N_OPT_DAY, make_pair(nDias, 0));
 
    for(int d = 0; d < nDias; d++)
    {
-	used_IDs_day.assign(max_description_id+1, false);
+	used_IDs_day.assign(max_description_id, false);
 	for(int i = 0; i < MPP_problem->time_conf.size(); i++)
 	{
 	   if(MPP_problem->time_conf[i].empty())continue;
@@ -884,6 +895,7 @@ void MPP::swap_days(vector<int> &data, int day1, int day2)
       swap(data[day1*N_OPT_DAY + ii], data[day2*N_OPT_DAY + ii] );
    }
 }
+
 pair<double, double> MPP::init_incremental_evaluation(vector<vector< double > > &globalPlan, vector< vector< vector<double> > > &nutriment_per_day, vector<int> &sol, vector< vector< vector < int > > > &time_id_day_table, vector< vector< int> > &time_diff)
 { 
         //feasibility information
@@ -959,12 +971,12 @@ pair<double, double> MPP::init_incremental_evaluation(vector<vector< double > > 
       }
   //  v_global_cat += (min_dcn_cat.first + ( 1.0 - ((double)min_dcn_cat.second/(double)nDias)));
     }
-//    for(int i = 0; i < MPP_problem->time_conf.size(); i++)
-//      {
-//      if(MPP_problem->time_conf[i].empty())continue;
-// 	for(int j = 0; j < time_id_day_table[i].size(); j++)
-//	sort(time_id_day_table[i][j].begin(), time_id_day_table[i][j].end());
-//     }
+    for(int i = 0; i < MPP_problem->time_conf.size(); i++)
+      {
+      if(MPP_problem->time_conf[i].empty())continue;
+ 	for(int j = 0; j < time_id_day_table[i].size(); j++)
+	sort(time_id_day_table[i][j].begin(), time_id_day_table[i][j].end());
+     }
 
     for(int i = 0; i < MPP_problem->time_conf.size(); i++)
     {
@@ -979,6 +991,9 @@ pair<double, double> MPP::init_incremental_evaluation(vector<vector< double > > 
 }
 double MPP::inc_eval_var_time(vector<int> &sol, Neighbor &new_neighbor, double current_var, vector< vector< vector < int > > > &time_id_day_table, vector< vector<int> > &time_diff)
 {
+  int num_nutr = (int)MPP_problem->v_constraints.size();
+  vector<constraint_nutrient> &v_constraints = (MPP_problem->v_constraints);
+  vector<int> &v_constraint_global = MPP_problem->v_constraint_global, &v_constraint_day = MPP_problem->v_constraint_day;
   vector<vector<infoDishes> > &v_times_dishes = (MPP_problem->v_times_dishes);
   int day =  new_neighbor.variable/N_OPT_DAY;
   int time = new_neighbor.variable%N_OPT_DAY;
@@ -986,31 +1001,55 @@ double MPP::inc_eval_var_time(vector<int> &sol, Neighbor &new_neighbor, double c
   int id_day_in = v_times_dishes[time][new_neighbor.newValue].description;
   if( id_day_out == id_day_in) return current_var;
   //delete day from id
+  pair<int, int> dcn_out_after = make_pair(nDias, 0), dcn_out_before = make_pair(nDias, 0);
   vector<int> diff_before, diff_after;
   int idx_out = upper_bound(time_id_day_table[time][id_day_out].begin(), time_id_day_table[time][id_day_out].end(), day) - time_id_day_table[time][id_day_out].begin();  
+
+  int size_=(time_id_day_table[time][id_day_out].size());
+
+  int l=max(0,idx_out-2), mid = max(0, idx_out-1), r = min(size_-1, idx_out);
+  cout <<  " l: "<<l<<" mid: "<<mid<<" r: "<<r<<" idx_out: "<<idx_out<<endl;
+
+  diff_before.push_back(time_id_day_table[time][id_day_out][mid]-time_id_day_table[time][id_day_out][l]);
+  diff_before.push_back(time_id_day_table[time][id_day_out][r]-time_id_day_table[time][id_day_out][mid]);
+  if( idx_out < size_ && (idx_out-2)>=0)
+  diff_after.push_back(time_id_day_table[time][id_day_out][r]-time_id_day_table[time][id_day_out][l]);
+
+  //info of inserting a  new element....
   int idx_in = upper_bound(time_id_day_table[time][id_day_in].begin(), time_id_day_table[time][id_day_in].end(), day) - time_id_day_table[time][id_day_in].begin();  
-  int size_out=(time_id_day_table[time][id_day_out].size());
-  int size_in = time_id_day_table[time][id_day_in].size();
-
-  int l_out=max(0,idx_out-2), mid_out = max(0, idx_out-1), r_out = min(size_out-1, idx_out), l_in=max(0,idx_in-1), r_in = min(idx_in, size_in-1);
-  // contribution before
-  diff_before.push_back(time_id_day_table[time][id_day_out][mid_out]-time_id_day_table[time][id_day_out][l_out]);
-  diff_before.push_back(time_id_day_table[time][id_day_out][r_out]-time_id_day_table[time][id_day_out][mid_out]);
-  if(size_in >=2) diff_before.push_back(time_id_day_table[time][id_day_in][r_in]-time_id_day_table[time][id_day_in][l_in]);
-  //contribution after
-  if( idx_out < size_out && idx_out>=2) diff_after.push_back(time_id_day_table[time][id_day_out][r_out]-time_id_day_table[time][id_day_out][l_out]);
-
-  if(size_in > 0)
+  size_ = time_id_day_table[time][id_day_in].size();
+  l=max(0,idx_in-1), r = min(idx_in, size_-1);
+  cout <<  " l: "<<l<<" day: "<<day<<" r: "<<r<< "idx_in: "<<idx_in<<endl;
+  if(!time_id_day_table[time][id_day_in].empty())
+  diff_before.push_back(time_id_day_table[time][id_day_in][r]-time_id_day_table[time][id_day_in][l]);
+ if(!time_id_day_table[time][id_day_in].empty())
+  if(idx_in < size_ && idx_in > 0)
   {
-     if(idx_in < size_in && idx_in > 0)diff_after.push_back(time_id_day_table[time][id_day_in][r_in]-day), diff_after.push_back(day-time_id_day_table[time][id_day_in][l_in]);
-     else if(idx_in >= size_in) diff_after.push_back(day-time_id_day_table[time][id_day_in][r_in]);
-     else if(idx_in <= 0) diff_after.push_back(time_id_day_table[time][id_day_in][l_in]-day);
+   diff_after.push_back(time_id_day_table[time][id_day_in][r]-day);
+   diff_after.push_back(day-time_id_day_table[time][id_day_in][l]);
   }
+  else if(idx_in >= size_)
+  diff_after.push_back(day-time_id_day_table[time][id_day_in][r]);
+  else if(idx_in <= 0)
+  diff_after.push_back(time_id_day_table[time][id_day_in][l]-day);
+
+
+  cout << "day"<< day<<endl;
+  for(int i = 0; i < time_id_day_table[time][id_day_out].size();i++) cout << time_id_day_table[time][id_day_out][i]<< " "; cout <<endl;  
+  for(int i = 0; i < time_id_day_table[time][id_day_in].size();i++) cout << time_id_day_table[time][id_day_in][i]<< " "; cout <<endl;  
   int i;
+
+
   for(i = 1; i < time_diff[time].size(); i++)
      if(time_diff[time][i] != 0) break;
+
   double new_var =  current_var - W_VAR_GLOBAL*f(make_pair(i, time_diff[time][i]));
   //getting new values
+ cout <<"before.."<<endl;
+  for( i = 0; i < diff_before.size(); i++) cout <<diff_before[i]<< " "; cout <<endl;
+ cout <<"after.."<<endl;
+  for( i = 0; i < diff_after.size(); i++) cout<<diff_after[i]<< " "; cout <<endl;
+
   for( i = 0; i < diff_before.size(); i++) time_diff[time][diff_before[i]]--;
   for( i = 0; i < diff_after.size(); i++) time_diff[time][diff_after[i]]++;
 
@@ -1021,51 +1060,6 @@ double MPP::inc_eval_var_time(vector<int> &sol, Neighbor &new_neighbor, double c
   //restoring values
   for( i = 0; i < diff_before.size(); i++) time_diff[time][diff_before[i]]++;
   for( i = 0; i < diff_after.size(); i++) time_diff[time][diff_after[i]]--;
+
   return new_var;
-}
-void MPP::update_inc_var(vector<int> &sol, double &current_var, Neighbor &new_neighbor, vector< vector< vector < int > > > &time_id_day_table, vector< vector<int> > &time_diff)
-{
-  vector<vector<infoDishes> > &v_times_dishes = (MPP_problem->v_times_dishes);
-  int day =  new_neighbor.variable/N_OPT_DAY;
-  int time = new_neighbor.variable%N_OPT_DAY;
-  int id_day_out = v_times_dishes[time][sol[day*N_OPT_DAY + time]].description;
-  int id_day_in = v_times_dishes[time][new_neighbor.newValue].description;
-  if( id_day_out == id_day_in) return ;//current_var;
-  //delete day from id
-  vector<int> diff_before, diff_after;
-  int idx_out = upper_bound(time_id_day_table[time][id_day_out].begin(), time_id_day_table[time][id_day_out].end(), day) - time_id_day_table[time][id_day_out].begin();  
-  int idx_in = upper_bound(time_id_day_table[time][id_day_in].begin(), time_id_day_table[time][id_day_in].end(), day) - time_id_day_table[time][id_day_in].begin();  
-  int size_out=(time_id_day_table[time][id_day_out].size());
-  int size_in = time_id_day_table[time][id_day_in].size();
-
-  int l_out=max(0,idx_out-2), mid_out = max(0, idx_out-1), r_out = min(size_out-1, idx_out), l_in=max(0,idx_in-1), r_in = min(idx_in, size_in-1);
-  // contribution before
-  diff_before.push_back(time_id_day_table[time][id_day_out][mid_out]-time_id_day_table[time][id_day_out][l_out]);
-  diff_before.push_back(time_id_day_table[time][id_day_out][r_out]-time_id_day_table[time][id_day_out][mid_out]);
-  if(size_in >=2) diff_before.push_back(time_id_day_table[time][id_day_in][r_in]-time_id_day_table[time][id_day_in][l_in]);
-  //contribution after
-  if( idx_out < size_out && idx_out>=2) diff_after.push_back(time_id_day_table[time][id_day_out][r_out]-time_id_day_table[time][id_day_out][l_out]);
-
-  if(size_in > 0)
-  {
-     if(idx_in < size_in && idx_in > 0)diff_after.push_back(time_id_day_table[time][id_day_in][r_in]-day), diff_after.push_back(day-time_id_day_table[time][id_day_in][l_in]);
-     else if(idx_in >= size_in) diff_after.push_back(day-time_id_day_table[time][id_day_in][r_in]);
-     else if(idx_in <= 0) diff_after.push_back(time_id_day_table[time][id_day_in][l_in]-day);
-  }
-  /////////////Modify id-day lists////////////////////////////
-  time_id_day_table[time][id_day_out].erase(time_id_day_table[time][id_day_out].begin()+idx_out-1);
-  time_id_day_table[time][id_day_in].insert(time_id_day_table[time][id_day_in].begin()+idx_in, day);
-
-  //Modify difference vectors.....  
-  int i;
-  for(i = 1; i < time_diff[time].size(); i++)
-     if(time_diff[time][i] != 0) break;
-  current_var -=  W_VAR_GLOBAL*f(make_pair(i, time_diff[time][i]));
-  //getting new values
-  for( i = 0; i < diff_before.size(); i++) time_diff[time][diff_before[i]]--;
-  for( i = 0; i < diff_after.size(); i++) time_diff[time][diff_after[i]]++;
-
-  for(i = 1; i < time_diff[time].size(); i++)
-     if(time_diff[time][i] != 0) break;
-  current_var +=  W_VAR_GLOBAL*f(make_pair(i, time_diff[time][i]));
 }

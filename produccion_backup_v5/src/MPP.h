@@ -34,7 +34,7 @@ using namespace std;
 #define WEIGHT_DAY 1.0e6
 #define DAYS_FAVORITE 7*3
 #define DAYS_NO_FAVORITE 7*4
-#define ITERATIONS_LS 150000
+#define ITERATIONS_LS 1000
 
 #define W_VAR_DAY 1000
 #define W_VAR_GLOBAL 100
@@ -129,10 +129,7 @@ class MPP{
 
 		double inc_eval_var_time(vector<int> &sol, Neighbor &new_neighbor, double current_var, vector< vector< vector < int > > > &time_id_day_table, vector< vector<int> > &time_diff);
 
-
-		void update_inc_feas(vector< vector<double> > &globalPlan, vector< vector<vector<double> > > &nutriment_per_day, vector<int> &current_sol, Neighbor &new_neighbor);
-
-		void update_inc_var(vector<int> &sol, double &current_var, Neighbor &new_neighbor, vector< vector< vector < int > > > &time_id_day_table, vector< vector<int> > &time_diff);
+		void update_data_incremental_eval(vector< vector<double> > &globalPlan, vector< vector<vector<double> > > &nutriment_per_day, vector<int> &current_sol, Neighbor &new_neighbor);
 
 		void swap_days(vector<int> &data, int day1, int day2);
 		inline void perturb_day(vector<int> &data, int day){ for(int k = 0; k < N_OPT_DAY; k++) data[day*N_OPT_DAY + k] = MPP_problem->random_dish(k);}
