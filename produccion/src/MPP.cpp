@@ -356,7 +356,6 @@ void MPP::localSearch( ) {
 	for (int i = 0; i < ITERATIONS_LS; i++){
 	evaluate();	
 		pair<double, double> currentResult = First_Improvement_Hill_Climbing(neighbors, x_var);
-		if(currentResult.first==0)
 		currentResult = First_Improvement_Hill_Climbing_swap(neighbors_swap, currentResult, x_var);
 	evaluate();	
 		if (currentResult >= bestResult){
@@ -775,7 +774,7 @@ pair<double, double> MPP::First_Improvement_Hill_Climbing(vector<Neighbor> &neig
 	   current_fit.first = new_infeasibility;
 	}
 	else if(fabs(new_infeasibility - current_fit.first) < EPSILON) //to check: epsilon...
-        { continue;
+        {
 	    double new_variability = inc_eval_var_time(current_sol, neighbors[i], current_fit.second, time_id_day_table, time_diff);
 //	    double v = calculateVariability(current_sol);
 	   if(current_fit.second < new_variability)

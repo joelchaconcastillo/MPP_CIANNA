@@ -34,7 +34,7 @@ using namespace std;
 #define WEIGHT_DAY 1.0e6
 #define DAYS_FAVORITE 7*3
 #define DAYS_NO_FAVORITE 7*4
-#define ITERATIONS_LS 150000
+#define ITERATIONS_LS 10000
 
 #define W_VAR_DAY 1000
 #define W_VAR_GLOBAL 100
