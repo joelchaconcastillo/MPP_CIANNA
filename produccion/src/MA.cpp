@@ -186,7 +186,6 @@ void MA::run(){
                  }
 		cout << population[indexBest]->ind.fitness << endl;
 		population[indexBest]->ind.exportcsv();
-		population[indexBest]->ind.calculateFeasibilityDegree2();
 	}
 //	printBest();
 }
