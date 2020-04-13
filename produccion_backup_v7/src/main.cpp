@@ -12,7 +12,7 @@ int main(int argc, char **argv){
 
 	srand(1); //check this!!! ??
 //	srand(time(NULL)); //check this!!! ??
-	int N = 2;
+	int N = 10;
 	double pc = 1.0;
 	double pm = 0.01;
 	double finalTime = atof(argv[4])*60;//25 * 60;
