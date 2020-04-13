@@ -11,7 +11,7 @@
 int main(int argc, char **argv){
 
 	srand(1); //check this!!! ??
-//	srand(time(NULL)); //check this!!! ??
+	srand(time(NULL)); //check this!!! ??
 	int N = 10;
 	double pc = 1.0;
 	double pm = 0.01;

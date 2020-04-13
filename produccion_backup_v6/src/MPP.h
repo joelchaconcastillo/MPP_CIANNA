@@ -5,7 +5,7 @@
 using namespace std;
 #define FOREACH(i, v) for (__typeof((v).begin()) i = (v).begin(); i != (v).end(); i++)
 //v_breakfast, v_morning_snack, v_starter, v_main_course, v_evening_snack, v_dinner, v_both_snack;
-#define EPSILON 1e-10
+#define EPSILON 1e-50
 
 #define N_CATEGORIES 3
 #define CATEGORY_1 1
@@ -53,6 +53,8 @@ struct Neighbor {
 struct Neighbor_swap{
 	int day1, day2;
 };
+
+
 struct infoDishes {
         int description;	
 	string time_day; //time related with the dish
@@ -65,18 +67,6 @@ struct constraint_nutrient
    double min, max;
    string name;
    int type;
-};
-struct Solution_LS
-{
-   set<int> badDays;
-   int heaviestNut, heaviestType;
-   vector<double> obj_values;
-   vector<int> x_var;
-   vector< vector<double> > globalPlan;
-   vector< vector< vector<double> > > nutriment_per_day;
-   vector< vector< vector < int > > > time_id_day_table;
-   vector< vector< int > > time_diff;
-   vector<vector<int>> uniq_per_day;
 };
 class MPP_Problem{
 	public:
@@ -134,25 +124,13 @@ class MPP{
 		void calculateFeasibilityDegree();
 		void calculateFeasibilityDegree(vector<int> &sol, double &feas);
 
-		void init_incremental_evaluation(struct Solution_LS &current);
-		void init_incremental_evaluation2(struct Solution_LS &current);
-		void inc_eval(struct Solution_LS &current, Neighbor &new_neighbor, vector<double> &new_objs);
-		void update_inc(struct Solution_LS &current, Neighbor &new_neighbor, vector<double> &new_objs);
+		void init_incremental_evaluation(vector<vector< double > > &globalPlan, vector< vector< vector<double> > > &nutriment_per_day, vector< vector< vector < int > > > &time_id_day_table, vector< vector< int> > &time_diff, vector<vector<bool>> &uniq_per_day, vector<int> &sol, vector<double> &objs);
+		void inc_eval( vector< vector<double> > &globalPlan, vector< vector<vector<double> > > &nutriment_per_day, Neighbor &new_neighbor, vector<int> &current_sol, vector< double> &current_objs, vector<double> &new_objs);
+		void update_inc_feas(vector< vector<double> > &globalPlan, vector< vector<vector<double> > > &nutriment_per_day, vector<int> &current_sol, Neighbor &new_neighbor);
+
+		void update_inc_var(vector<int> &sol, double &current_var, Neighbor &new_neighbor, vector< vector< vector < int > > > &time_id_day_table, vector< vector<int> > &time_diff);
+
 		void swap_days(vector<int> &data, int day1, int day2);
-  	        inline void perturb_opt(vector<int> &data, int day, int which)
-		{
-	           set<int> id_Day;
-		   for(int opt = 0; opt < N_OPT_DAY; opt++)
-		     id_Day.insert(MPP_problem->v_opt_dishes[opt][data[day*N_OPT_DAY+opt]].description);
-		   int rd = MPP_problem->random_dish(which);
-	           int id = MPP_problem->v_opt_dishes[which][rd].description;
-		   while(id_Day.find(id) != id_Day.end())//it forces to different dishes in a day
-		   { 
-		      rd = MPP_problem->random_dish(which);
-		      id = MPP_problem->v_opt_dishes[which][rd].description;
-	           }
-		   data[day * N_OPT_DAY + which] = rd;
-		}
 		inline void perturb_day(vector<int> &data, int day){ 		
 			set<int> dish;
 			for(int k = 0; k < N_OPT_DAY; k++) 
@@ -166,13 +144,12 @@ class MPP{
 			   }
 			   dish.insert(id);
 			   data[day*N_OPT_DAY + k] = rd;
-			
 			}
 		}
  		inline double f(pair<int, int> data_dcn){ return ((double)data_dcn.first + ( 1.0 - ((double)data_dcn.second/(double)nDias)));}
 
- 		inline void update_dcn_pair(int diff, pair<int, int> &p_dcn){ if(diff < p_dcn.first)p_dcn = make_pair(diff, 1);else if(diff == p_dcn.first)p_dcn.second++; }
 
+      		inline void update_dcn_pair(int diff, pair<int, int> &p_dcn){ if(diff < p_dcn.first)p_dcn = make_pair(diff, 1);else if(diff == p_dcn.first)p_dcn.second++; }
 		void calculateVariability(vector<int> &sol, vector<double> &objs);
 		int heaviestNut, heaviestType;
 		double valorFac, variabilidadObj;//factibility and variability of the current solution..
@@ -180,9 +157,10 @@ class MPP{
 		set<int> badDays;
 		bool comp_objs(vector<double> &variability_v1, vector<double> &variability_v2);
 
-
-
-		void  First_Improvement_Hill_Climbing2(vector<Neighbor> &neighbors, vector<int> &best_sol, vector<double> &best_objs);
+		//temporal...
+		double inc_eval_feas_time(vector< vector<double> > &globalPlan, vector< vector<vector<double> > > &nutriment_per_day, vector<int> &current_sol, Neighbor &new_neighbor, double current_infeasibility);
+		double inc_eval_var_time(vector<int> &sol, Neighbor &new_neighbor, double current_var, vector< vector< vector < int > > > &time_id_day_table, vector< vector<int> > &time_diff);
 
 };
+
 #endif
