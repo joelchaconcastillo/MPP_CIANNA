@@ -12,7 +12,7 @@ int main(int argc, char **argv){
 
 	srand(1); //check this!!! ??
 //	srand(time(NULL)); //check this!!! ??
-	int N = 2;
+	int N = 10;
 	double pc = 1.0;
 	double pm = 0.01;
 	double finalTime = atof(argv[4])*60;//25 * 60;
@@ -52,9 +52,10 @@ int main(int argc, char **argv){
 	MA ma(N, pc, pm, finalTime);
  	
 	ma.run();
-
-//	ExtendedIndividual *ei = new ExtendedIndividual();
-//	ei->ind.init();
-//	ei->ind.full_search();
+return 0;
+	ExtendedIndividual *ei = new ExtendedIndividual();
+	ei->ind.init();
+//  	ei->ind.localSearch2();
+//  	ei->ind.localSearch();
 
 }

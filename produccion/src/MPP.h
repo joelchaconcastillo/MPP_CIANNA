@@ -36,9 +36,8 @@ using namespace std;
 #define WEIGHT_DAY 1.0e6
 #define DAYS_FAVORITE 7*3
 #define DAYS_NO_FAVORITE 7*4
-#define ITERATIONS_LS 100000
+#define ITERATIONS_LS 500
 
-#define W_VAR_DAY 1000
 #define W_VAR_GLOBAL 100
 #define W_VAR_GLOBAL_CAT 1
 //extern volatile bool finished;
@@ -75,7 +74,7 @@ struct Solution_LS
    vector< vector<double> > globalPlan;
    vector< vector< vector<double> > > nutriment_per_day;
    vector< vector< vector < int > > > time_id_day_table;
-   vector< vector< int > > time_diff;
+   vector< vector< int > > time_diff, time_diff_cat;
    vector<vector<int>> uniq_per_day;
 };
 class MPP_Problem{
@@ -120,7 +119,6 @@ class MPP{
 		void uniform2Crossover(MPP &i2);
 		void pairBasedCrossover(MPP &i2);
 		void localSearch();
-		void localSearch2();
 		void First_Improvement_Hill_Climbing(vector<Neighbor> &neighbors, vector<int> &current_sol, vector<double> &objs);
 		void First_Improvement_Hill_Climbing_swap(vector<Neighbor_swap> &neighbors, vector<int> &best_sol, vector<double> &best_objs);
 		int getDistance(MPP &ind2); 
@@ -134,15 +132,11 @@ class MPP{
 
 	private:
 		void calculateFeasibilityDegree();
-		void calculateFeasibilityDegree(vector<int> &sol, double &feas);
-		void calculateFeasibilityDegree2(vector<int> &sol, double &feas);
+		void calculateFeasibilityDegree(vector<int> &sol, double &feas_day, double &feas_global);
 
 		void init_incremental_evaluation(struct Solution_LS &current);
-		void init_incremental_evaluation2(struct Solution_LS &current);
 		void inc_eval(struct Solution_LS &current, Neighbor &new_neighbor, vector<double> &new_objs);
-		void inc_eval2(struct Solution_LS &current, Neighbor &new_neighbor, vector<double> &new_objs);
 		void update_inc(struct Solution_LS &current, Neighbor &new_neighbor, vector<double> &new_objs);
-		void update_inc2(struct Solution_LS &current, Neighbor &new_neighbor, vector<double> &new_objs);
 		void swap_days(vector<int> &data, int day1, int day2);
   	        inline void perturb_opt(vector<int> &data, int day, int which)
 		{
