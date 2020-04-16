@@ -42,29 +42,19 @@ int main(int argc, char **argv){
 	STP.inv_unique_opt_time = inv_unique_opt_time;
 //	STP.weights =  {0.15, 0.3, 0.05, 0.05, 0.3, 0.15};
 	STP.weights =  {1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+	STP.priority_time=  {inv_unique_opt_time[MAIN_COURSE_1], inv_unique_opt_time[STARTER_1], inv_unique_opt_time[BREAKFAST], inv_unique_opt_time[DINNER], inv_unique_opt_time[MORNING_SNACK], inv_unique_opt_time[EVENING_SNACK]};
+
 
 	MPP::MPP_problem = &STP;
 
+
         //everithing seem's to be OK, thus starting the algorithm...
 	MA ma(N, pc, pm, finalTime);
-        //get the time needed to attain a feasible solution..	
- 	ExtendedIndividual *ei = new ExtendedIndividual();
+ 	
+	ma.run();
+	exit(0);
+	ExtendedIndividual *ei = new ExtendedIndividual();
 	ei->ind.init();
-  	double ls_time = ei->ind.localSearch_testing_time(finalTime);
-//	cout << ls_time<<endl;
-        if(ls_time*10*N > finalTime)
-	{
-//		cout << "ls"<<endl;
-	        ei->ind.localSearch(finalTime-ls_time);
-		ei->ind.exportcsv();
-//		cout << ei->ind.fitness<<endl;
-	}
-	else
-	{
-//	   cout << "memetic"<<endl;
-	  finalTime -=ls_time;
-	   ma.timeLS = 10*ls_time;
-	   ma.run();
-	}
-	delete ei;
+  	ei->ind.localSearch();
+
 }

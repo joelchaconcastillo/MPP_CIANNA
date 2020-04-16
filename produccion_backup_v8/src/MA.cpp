@@ -67,11 +67,7 @@ void MA::mutation(){
 
 void MA::localSearch(){
 	for (int i = 0; i < offspring.size(); i++){
-		struct timeval currentTime; 
-		gettimeofday(&currentTime, NULL);
-		double elapsedTime = (double) (currentTime.tv_sec) + (double) (currentTime.tv_usec)/1.0e6;
-		double availableTime = min(finalTime-elapsedTime, timeLS);
-		offspring[i]->ind.localSearch(availableTime);
+		offspring[i]->ind.localSearch();
 	}
 }
 
@@ -183,25 +179,14 @@ void MA::run(){
 		gettimeofday(&currentTime, NULL);
 		elapsedTime = ((double) (currentTime.tv_sec) + (double) (currentTime.tv_usec)/1.0e6)-initialTime;
 		int indexBest = 0;
-//	       for (int i = 1; i < population.size(); i++)
-//                {
-//		        if (population[indexBest]->ind.fitness > population[i]->ind.fitness)
-//			indexBest = i;
-//                 }
-//		cout << population[indexBest]->ind.fitness << endl;
-//		population[indexBest]->ind.exportcsv();
+	       for (int i = 1; i < population.size(); i++)
+                {
+		if (population[indexBest]->ind.fitness > population[i]->ind.fitness)
+			indexBest = i;
+                 }
+		cout << population[indexBest]->ind.fitness << endl;
+		population[indexBest]->ind.exportcsv();
 	}
-
-	int indexBest = 0;
-	for (int i = 1; i < population.size(); i++)
-        {
-	   if(population[indexBest]->ind.fitness > population[i]->ind.fitness)
-	   indexBest = i;
-        }
-	population[indexBest]->ind.exportcsv();
-
-
-
 //	printBest();
 }
 

@@ -32,7 +32,6 @@ public:
 		vector< ExtendedIndividual * > offspring;
 		double initialTime;
 		double DI;
-		double timeLS;
 };
 
 #endif

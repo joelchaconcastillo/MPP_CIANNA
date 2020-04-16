@@ -36,7 +36,7 @@ using namespace std;
 #define WEIGHT_DAY 1.0e6
 #define DAYS_FAVORITE 7*3
 #define DAYS_NO_FAVORITE 7*4
-#define ITERATIONS_LS 100
+#define ITERATIONS_LS 500
 
 #define W_VAR_GLOBAL 100
 #define W_VAR_GLOBAL_CAT 1
@@ -96,6 +96,7 @@ class MPP_Problem{
 		vector<vector<int>> conf_day, opt_conf, unique_opt_time;
 		vector<int> inv_unique_opt_time;
 		vector<double> weights;
+	 	vector<int> priority_time;
 		int max_description_id;
 };
 class MPP{
@@ -117,8 +118,8 @@ class MPP{
 		void uniformCrossover(MPP &i2);
 		void uniform2Crossover(MPP &i2);
 		void pairBasedCrossover(MPP &i2);
-		void localSearch(double finalTime);
-		double localSearch_testing_time(double finalTime);
+		void localSearch();
+
 
 
 		void  First_Improvement_Hill_Climbing_Day(vector<Neighbor> &neighbors, vector<int> &best_solution, double &best_feasibility);
@@ -128,6 +129,10 @@ class MPP{
 
 		double inc_eval_day(Neighbor &neighbor, vector<vector<double>> &nut_info, vector<int> &best_solution, double best_feasibility);
 		void init_inc_eval_day(vector<int> &current_solution, vector<vector<double>> &nut_info);
+
+
+
+
 		void First_Improvement_Hill_Climbing(vector<Neighbor> &neighbors, vector<int> &current_sol, vector<double> &objs);
 		void First_Improvement_Hill_Climbing_swap(vector<Neighbor_swap> &neighbors, vector<int> &best_sol, vector<double> &best_objs);
 		int getDistance(MPP &ind2); 
@@ -186,6 +191,9 @@ class MPP{
 	        vector<double> obj_values;//{feasiblity, varibility x times}
 		set<int> badDaysFeas, badDaysVar;
 		bool comp_objs(vector<double> &variability_v1, vector<double> &variability_v2);
+
+
+
 		void  First_Improvement_Hill_Climbing2(vector<Neighbor> &neighbors, vector<int> &best_sol, vector<double> &best_objs);
 
 };
