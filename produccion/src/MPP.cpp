@@ -366,6 +366,7 @@ void MPP::localSearch(double finalTime){
         {
 	  best_objs = obj_values;
           bestIndividual = x_var;
+//	cout << best_objs<<endl;
         }
         else x_var = bestIndividual;
 
@@ -415,6 +416,7 @@ void MPP::localSearch(double finalTime){
 	elapsedTime = ((double) (currentTime.tv_sec) + (double) (currentTime.tv_usec)/1.0e6)-initialTime;
      }
      x_var = bestIndividual;
+//	cout << obj_values<<endl;
      evaluate();
 }
 /*

@@ -70,7 +70,7 @@ void MA::localSearch(){
 		struct timeval currentTime; 
 		gettimeofday(&currentTime, NULL);
 		double elapsedTime = (double) (currentTime.tv_sec) + (double) (currentTime.tv_usec)/1.0e6;
-		double availableTime = min(finalTime-elapsedTime, timeLS);
+		double availableTime = min(finalTime-(elapsedTime-initialTime), timeLS);
 		offspring[i]->ind.localSearch(availableTime);
 	}
 }
